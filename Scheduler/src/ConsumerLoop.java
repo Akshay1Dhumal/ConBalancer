@@ -1,5 +1,3 @@
-
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -21,27 +19,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-class SimpleProducer {
-    private static Producer<Integer, String> producer;
-    private final Properties properties = new Properties();
 
-    public SimpleProducer() {
-        properties.put("metadata.broker.list", "sparknode19:9092,sparknode18:9092,gas:9092");
-        properties.put("serializer.class", "kafka.serializer.StringEncoder");
-        properties.put("request.required.acks", "1");
-        producer = new Producer<>(new ProducerConfig(properties));
-    }
-    public void  produce(String topic,String msg) {
-        
-        /*String topic = args[0];
-        String msg = args[1];*/
-        KeyedMessage<Integer, String> data = new KeyedMessage<>(topic, msg);
-        producer.send(data);
-        System.out.println("good");
-        producer.close();
-        System.out.println("bad");
-    }
-}
 class container_stats {
 	Stats s; // Structure containing the statistics
 	String container_id;
@@ -336,12 +314,20 @@ public class ConsumerLoop implements Runnable {
 		System.out.println("Found solution in " + generation + " generations");
 		System.out.println("Best solution: " + population.getFittest(0).getFitness()+" "+population.getFittest(0));
 		
-		
+		int[] fittest=population.getFittest(0).getIntegerRepresentation();
 		/*
-		 * Send the migration data to all machines
+		 * Send the migration data to specific set of machines
 		 */
-		SimpleProducer sp=new SimpleProducer();
-	//	sp.produce(topic, msg);
+		
+		for(i=0;i<fittest.length;i++)
+		{
+			if(fittest[i]!=initial_placements[i])
+			{
+				System.out.println("L"+(initial_placements[i]+1)+"  && "+ c_info.get(i).getContainer_id()+",L"+fittest[i]);
+			MultiBrokerProducer.produce("L"+(initial_placements[i]+1),c_info.get(i).getContainer_id()+",L"+fittest[i]);
+			}
+		}
+
 	}
 	
 	

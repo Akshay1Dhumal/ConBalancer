@@ -146,7 +146,13 @@ public class Individual {
 	public double getFitness() {
 		return this.fitness;
 	}
-	
+	public int[] getIntegerRepresentation() {
+		int output[]=new int[chromosome.length];
+		for (int gene = 0; gene < this.chromosome.length; gene++) {
+			output[gene]= this.chromosome[gene];
+		}
+		return output;
+	}
 	
 	/**
 	 * Display the chromosome as a string.

@@ -109,9 +109,7 @@ public class GeneticAlgorithm {
 		 */
 		double diff = 0, temp = 0, square = 0,variance=0;
 		// Loop over individual's genes
-		
-		
-		
+
 		for (p = 0; p <= 5; p++) {
 			for (int geneIndex = 0; geneIndex < individual.getChromosomeLength(); geneIndex++) {
 				/*
@@ -122,6 +120,7 @@ public class GeneticAlgorithm {
 				 */
 				switch (p) {
 				case 0:
+					System.out.println(p+" "+geneIndex);
 					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex)
 					.getContainer_stats().n_cpu_perc;
 					break;
