@@ -160,7 +160,7 @@ public class ConsumerLoop implements Runnable {
 		props.put("zookeeper.connect", zookeeper);
 		props.put("group.id", groupId);
 		props.put("bootstrap.servers", "sparknode19:9092,gas:9092"); // Config the kafka broker servers here.
-		props.put("group.id", groupId);
+	//	props.put("group.id", groupId);
 		props.put("key.deserializer", StringDeserializer.class.getName());
 		props.put("value.deserializer", StringDeserializer.class.getName());
 		this.consumer = new KafkaConsumer<>(props);
@@ -321,10 +321,11 @@ public class ConsumerLoop implements Runnable {
 		
 		for(i=0;i<fittest.length;i++)
 		{
-			if(fittest[i]!=initial_placements[i])
+			System.out.println(fittest[i]+" ***** "+(initial_placements[i]-1));
+			if(fittest[i]!=initial_placements[i]-1)
 			{
-				System.out.println("L"+(initial_placements[i]+1)+"  && "+ c_info.get(i).getContainer_id()+",L"+fittest[i]);
-			MultiBrokerProducer.produce("L"+(initial_placements[i]+1),c_info.get(i).getContainer_id()+",L"+fittest[i]);
+				System.out.println("L"+(initial_placements[i]-1)+" && "+ c_info.get(i).getContainer_id()+",L"+fittest[i]);
+			MultiBrokerProducer.produce("L"+(initial_placements[i]-1),c_info.get(i).getContainer_id()+",L"+fittest[i]);
 			}
 		}
 
@@ -378,7 +379,6 @@ public class ConsumerLoop implements Runnable {
 						}
 					System.out.println("END ..............................................................");
 					}
-
 					stopTime = System.currentTimeMillis();
 					elapsedTime = stopTime - startTime;
 					logger.info("Elapsed time " + elapsedTime);
@@ -386,13 +386,10 @@ public class ConsumerLoop implements Runnable {
 						flag_time = 0;
 						preProcessData();
 						GA_init();
-
 					}
-
 				}
 				flag = 1;
 			}
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -418,7 +415,6 @@ public class ConsumerLoop implements Runnable {
 		for (int i = 0; i < numConsumers; i++) {
 			ConsumerLoop consumer = new ConsumerLoop(i, " sparknode19:2181,sparknode18:2181,gas:2181", groupid, topics);
 			consumers.add(consumer);
-			
 			executor.submit(consumer);
 		}
 
