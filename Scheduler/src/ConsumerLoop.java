@@ -196,7 +196,7 @@ public class ConsumerLoop implements Runnable {
 			}
 		}
 
-		System.out.println("Total cpu usage " + total_cpu_usage + " Total mem usage " + total_mem_usage);
+		System.out.println("Total cpu_usage " + total_cpu_usage + " Total mem usage " + total_mem_usage);
 		// Normalizing the values
 		for (int s : keys) {
 			logger.info("TEST2 " + s);
