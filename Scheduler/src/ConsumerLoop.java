@@ -325,7 +325,7 @@ public class ConsumerLoop implements Runnable {
 			if(fittest[i]!=initial_placements[i]-1)
 			{
 				System.out.println("L"+(initial_placements[i]-1)+" && "+ c_info.get(i).getContainer_id()+",L"+fittest[i]);
-			MultiBrokerProducer.produce("L"+(initial_placements[i]-1),c_info.get(i).getContainer_id()+",L"+fittest[i]);
+				MultiBrokerProducer.produce("L"+(initial_placements[i]-1),c_info.get(i).getContainer_id()+",L"+fittest[i]);
 			}
 		}
 

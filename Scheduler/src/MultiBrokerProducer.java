@@ -24,11 +24,11 @@ public class MultiBrokerProducer {
 		new MultiBrokerProducer();
 		Random random = new Random();
 		producer.send(new KeyedMessage<Integer, String>(topic, msg));
-        for (long i = 0; i < 10; i++) {
+       /* for (long i = 0; i < 10; i++) {
             Integer key = random.nextInt(255);
             msg = "This message is for key - " + key;
-            producer.send(new KeyedMessage<Integer, String>(topic.trim(), msg.trim()));
-        }
+           // producer.send(new KeyedMessage<Integer, String>(topic.trim(), msg.trim()));
+        }*/
 		producer.send(new KeyedMessage<Integer, String>(topic, msg));
 		producer.close();
 	}
