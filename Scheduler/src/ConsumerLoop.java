@@ -159,7 +159,7 @@ public class ConsumerLoop implements Runnable {
 		Properties props = new Properties();
 		props.put("zookeeper.connect", zookeeper);
 		props.put("group.id", groupId);
-		props.put("bootstrap.servers", "sparknode19:9092,gas:9092"); // Config the kafka broker servers here.
+		props.put("bootstrap.servers", "sparknode18:9092,sparknode19:9092,gas:9092"); // Config the kafka broker servers here.
 	//	props.put("group.id", groupId);
 		props.put("key.deserializer", StringDeserializer.class.getName());
 		props.put("value.deserializer", StringDeserializer.class.getName());
@@ -318,7 +318,7 @@ public class ConsumerLoop implements Runnable {
 		/*
 		 * Send the migration data to specific set of machines
 		 */
-		
+		System.out.println("Consumer Loop started ............");
 		for(i=0;i<fittest.length;i++)
 		{
 			System.out.println(fittest[i]+" ***** "+(initial_placements[i]-1));
@@ -385,7 +385,7 @@ public class ConsumerLoop implements Runnable {
 					if (elapsedTime > 5000) {
 						flag_time = 0;
 						preProcessData();
-						GA_init();
+						//GA_init();
 					}
 				}
 				flag = 1;
@@ -406,7 +406,7 @@ public class ConsumerLoop implements Runnable {
 	public static void main(String[] args) {
 		int numConsumers = 1;
 		String groupid = "consumer-tutorial-group";
-		String topic[] = new String[] { "M1", "M2", "M3" };
+		String topic[] = new String[] { "M2", "M1", "M3" };
 
 		List<String> topics = Arrays.asList(topic);
 		ExecutorService executor = Executors.newFixedThreadPool(numConsumers);

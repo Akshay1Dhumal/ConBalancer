@@ -24,7 +24,6 @@ public class ClientListener implements Runnable {
 	public ClientListener(int id, String zookeeper, String groupId, List<String> topics) {
 		this.id = id;
 		this.topics = topics;
-	
 		Properties props = new Properties();
 		props.put("zookeeper.connect", zookeeper);
 		props.put("group.id", groupId);
