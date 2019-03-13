@@ -159,7 +159,8 @@ public class ConsumerLoop implements Runnable {
 		Properties props = new Properties();
 		props.put("zookeeper.connect", zookeeper);
 		props.put("group.id", groupId);
-		props.put("bootstrap.servers", "sparknode18:9092,sparknode19:9092,gas:9092"); // Config the kafka broker servers here.
+	//	props.put("bootstrap.servers", "sparknode18:9092,sparknode19:9092,gas:9092"); // Config the kafka broker servers here.
+		props.put("bootstrap.servers", "10.21.235.181:9092,10.21.233.193:9092"); // Config the kafka broker servers here.
 	//	props.put("group.id", groupId);
 		props.put("key.deserializer", StringDeserializer.class.getName());
 		props.put("value.deserializer", StringDeserializer.class.getName());
@@ -406,14 +407,16 @@ public class ConsumerLoop implements Runnable {
 	public static void main(String[] args) {
 		int numConsumers = 1;
 		String groupid = "consumer-tutorial-group";
-		String topic[] = new String[] { "M2", "M1", "M3" };
+		//String topic[] = new String[] { "M2", "M1", "M3" };
+		String topic[] = new String[] { "M2", "M1" };
+		
 
 		List<String> topics = Arrays.asList(topic);
 		ExecutorService executor = Executors.newFixedThreadPool(numConsumers);
 
 		final List<ConsumerLoop> consumers = new ArrayList<>();
 		for (int i = 0; i < numConsumers; i++) {
-			ConsumerLoop consumer = new ConsumerLoop(i, " sparknode19:2181,sparknode18:2181,gas:2181", groupid, topics);
+			ConsumerLoop consumer = new ConsumerLoop(i, " 10.21.235.181:2181,10.21.233.193:2181", groupid, topics);
 			consumers.add(consumer);
 			executor.submit(consumer);
 		}
