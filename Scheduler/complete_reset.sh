@@ -32,7 +32,7 @@ do
 done
 
 
-#REmoving logs  on all machines
+#Removing logs  on all machines
 for i  in "${!mach_name[@]}"
 do
         ssh -t ${mach_name[i]}  "echo boss | ./opt/kafka_2.11-0.9.0.0/delete_logs.sh"

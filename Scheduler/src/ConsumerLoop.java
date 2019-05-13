@@ -101,6 +101,7 @@ public class ConsumerLoop implements Runnable {
 	DecimalFormat numberFormat = new DecimalFormat("#.00");
 	Logger logger = Logger.getLogger("MyLog");
 	FileHandler fh;
+	static int ga_calls=0;
 	
 	int wait_period = 5000; // Configurable
 	/**
@@ -128,7 +129,7 @@ public class ConsumerLoop implements Runnable {
 				// loop to see if container exists in that machine. If it exists, then remove
 				// and add again
 				for (int i = 0; i < aci.size(); i++) {
-					System.out.println("alreday in " + aci.get(i).container_id);
+					System.out.println("already in " + aci.get(i).container_id);
 					if (aci.get(i).container_id.trim().equals(a[1].trim())) // if container exists in the machine
 					{
 						aci.remove(i);
@@ -164,6 +165,7 @@ public class ConsumerLoop implements Runnable {
 	//	props.put("group.id", groupId);
 		props.put("key.deserializer", StringDeserializer.class.getName());
 		props.put("value.deserializer", StringDeserializer.class.getName());
+		
 		this.consumer = new KafkaConsumer<>(props);
 	}
 	/**
@@ -185,8 +187,8 @@ public class ConsumerLoop implements Runnable {
 						+ al.get(i).getContainer_stats().cpu_perc + "  Mem perc "
 						+ al.get(i).getContainer_stats().mem_perc + " Mem Usage"
 						+ al.get(i).getContainer_stats().mem_usage + "  Mem Avail "
-						+ al.get(i).getContainer_stats().mem_avail + " NetI " + al.get(i).getContainer_stats().block_o
-						+ " " + al.get(i).getContainer_stats().block_i);
+						+ al.get(i).getContainer_stats().mem_avail + " block io " + al.get(i).getContainer_stats().block_o
+						+ " " + al.get(i).getContainer_stats().block_i+" "+al.get(i).getContainer_stats().net_i+" "+al.get(i).getContainer_stats().net_o);
 
 				total_cpu_usage += al.get(i).getContainer_stats().cpu_perc;
 				total_mem_usage += al.get(i).getContainer_stats().mem_usage;
@@ -203,6 +205,7 @@ public class ConsumerLoop implements Runnable {
 			logger.info("TEST2 " + s);
 			ArrayList<ContainerInfo> al = hm.get(s);
 			for (int i = 0; i < al.size(); i++) {
+			
 				al.get(i).container_stats.n_mem_usage = Double
 						.parseDouble(numberFormat.format(al.get(i).container_stats.mem_usage / total_mem_usage));
 				al.get(i).container_stats.n_cpu_perc = Double
@@ -245,8 +248,21 @@ public class ConsumerLoop implements Runnable {
 	 */
 	public void GA_init()
 	{
+		  Logger logger = Logger.getLogger("MyLog");  
+		    FileHandler fh;  
+try {
+		 fh = new FileHandler("/home/gas/my1.log");  
+	        logger.addHandler(fh);
+	        SimpleFormatter formatter = new SimpleFormatter();  
+	        fh.setFormatter(formatter);  
+}
+catch(Exception e)
+{
+	e.printStackTrace();
+}
+	        
 		c_info=new ArrayList<>();
-		GeneticAlgorithm ga = new GeneticAlgorithm(10, 0.001, 0.95, 2);
+		GeneticAlgorithm ga = new GeneticAlgorithm(100, 0.05, 0.95, 2);  //100, 0.01, 0.95, 2
 		// Initialize population
 		Set<Integer> keys = hm.keySet();
 	
@@ -289,11 +305,13 @@ public class ConsumerLoop implements Runnable {
 		 * straightforward: if there's a member of the population whose
 		 * chromosome is all ones, we're done!
 		 */
+		double avg=0;
 	//	while (ga.isTerminationConditionMet(population) == false) {
 		while(generation<10) {
 			// Print fittest individual from population
-			System.out.println("Best solution: " + population.getFittest(0).toString());
-
+			System.out.println("Best solution: " + population.getFittest(0).toString()+" "+population.getFittest(0).getFitness());
+			avg=avg+population.getPopulationFitness();
+			//population.getPopulationFitness();
 			// Apply crossover
 			population = ga.crossoverPopulation(population,machine_ids);
 
@@ -314,19 +332,29 @@ public class ConsumerLoop implements Runnable {
 		 */
 		System.out.println("Found solution in " + generation + " generations");
 		System.out.println("Best solution: " + population.getFittest(0).getFitness()+" "+population.getFittest(0));
-		
+		try {
+	        // the following statement is used to log any messages  
+	        //logger.info( population.getFittest(0).getFitness()+"\n");
+			logger.info(avg/10+" ");
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 		int[] fittest=population.getFittest(0).getIntegerRepresentation();
 		/*
 		 * Send the migration data to specific set of machines
 		 */
-		System.out.println("Consumer Loop started ............");
+		System.out.println("Result producer started ...");
 		for(i=0;i<fittest.length;i++)
 		{
-			System.out.println(fittest[i]+" ***** "+(initial_placements[i]-1));
-			if(fittest[i]!=initial_placements[i]-1)
+			//System.out.println( c_info.get(i).getContainer_id()+"New machine "+fittest[i]+" Old machine "+(initial_placements[i]));
+		//	System.out.println("Machine "+(initial_placements[i])+" "+ c_info.get(i).getContainer_id()+"  "+ c_info.get(i).getContainer_stats().cpu_perc+" "+c_info.get(i).getContainer_stats().mem_perc);
+			
+			if(fittest[i]!=initial_placements[i])
 			{
-				System.out.println("L"+(initial_placements[i]-1)+" && "+ c_info.get(i).getContainer_id()+",L"+fittest[i]);
-				MultiBrokerProducer.produce("L"+(initial_placements[i]-1),c_info.get(i).getContainer_id()+",L"+fittest[i]);
+				System.out.println("L"+(initial_placements[i])+" Listening ... Migrate "+ c_info.get(i).getContainer_id()+"  "+ c_info.get(i).getContainer_stats().cpu_perc+" "+c_info.get(i).getContainer_stats().mem_perc+" to L"+fittest[i]);
+				MultiBrokerProducer.produce("L"+(initial_placements[i]),c_info.get(i).getContainer_id()+",L"+fittest[i]);
 			}
 		}
 
@@ -339,17 +367,21 @@ public class ConsumerLoop implements Runnable {
 		try {
 			int topic ;
 			String msg = null;
-			fh = new FileHandler("/home/gas/Desktop/Docker_exp/MyLogFile.log");
-			logger.addHandler(fh);
-			SimpleFormatter formatter = new SimpleFormatter();
-			fh.setFormatter(formatter);
+			//fh = new FileHandler("/home/gas/Desktop/Docker_exp/MyLogFile.log");
+			//logger.addHandler(fh);
+			//SimpleFormatter formatter = new SimpleFormatter();
+			//fh.setFormatter(formatter);
+			
 			int flag = 0, flag_time = 0;
 			consumer.subscribe(topics);
 			/*
 			 * sparknode18 : abe7713df8be : 0.00% : 8.75 MiB / 7.816 GiB : 0.11% : 15.1 kB /
 			 * 648 B : 7.38 MB / 0 B : 8195200 : 6242336 : 8 : 1 : total=2157 N0=2157 :
 			 */
-
+			for(int h=0;h<4;h++) {// to filter out old records. In 4 polls records are consumed. 
+				ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);
+				System.out.println("Initial Records Are " + records.count());
+				}
 			while (true) {
 				/*
 				 * consumer.pause(); //This is done to remove all the accommodated previous data
@@ -359,14 +391,15 @@ public class ConsumerLoop implements Runnable {
 					startTime = System.currentTimeMillis();
 					flag_time = 1;
 				}
+				
 				ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);
 				System.out.println("Records are " + records.count());
-
+				
 				if (flag != 0) {
 					for (ConsumerRecord<String, String> record : records) {
 						topic = Integer.parseInt(record.topic().substring(1,record.topic().length()));
 						msg = record.value();
-						//System.out.println(msg+ " .hello world.  "+topic);
+						System.out.println(msg+ "   "+topic);
 						String[] a = msg.split(":"); // a[0] is container id
 
 						if (machine_list.contains(topic)) // if machine exists then simply check whether all containers ARE PART OF IT
@@ -378,19 +411,37 @@ public class ConsumerLoop implements Runnable {
 							machine_list.add(topic);
 							add_info(a, topic);
 						}
-					System.out.println("END ..............................................................");
+					//System.out.println("END ..............................................................");
 					}
 					stopTime = System.currentTimeMillis();
 					elapsedTime = stopTime - startTime;
 					logger.info("Elapsed time " + elapsedTime);
-					if (elapsedTime > 5000) {
+					if (elapsedTime > 7000) {//tunable to get good number of records.
 						flag_time = 0;
 						preProcessData();
-						//GA_init();
+						//Test for loop
+						int test=1;
+					 //
+							
+						if(ga_calls<1)
+						{
+						//	for(int k=0;k<20;k++) {
+							//	System.out.println(test+" TEST.................................................................................................................................................");
+						GA_init(); 
+							//}
+						ga_calls++;
+						}
+						else
+						{
+							System.exit(0);
+						}
+						
 					}
 				}
 				flag = 1;
-			}
+				
+			} //end of while loop
+	
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -406,9 +457,10 @@ public class ConsumerLoop implements Runnable {
 
 	public static void main(String[] args) {
 		int numConsumers = 1;
-		String groupid = "consumer-tutorial-group";
+		System.out.println("Hello world");
+		String groupid = "consumer-grp";
 		//String topic[] = new String[] { "M2", "M1", "M3" };
-		String topic[] = new String[] { "M2", "M1" };
+		String topic[] = new String[] { "M0", "M1","M2","M3" };
 		
 
 		List<String> topics = Arrays.asList(topic);

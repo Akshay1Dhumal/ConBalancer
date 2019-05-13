@@ -27,7 +27,7 @@ public class ClientListener implements Runnable {
 		Properties props = new Properties();
 		props.put("zookeeper.connect", zookeeper);
 		props.put("group.id", groupId);
-		props.put("bootstrap.servers", "sparknode19:9092,sparknode18:9092,gas:9092"); // Config the kafka broker servers
+		props.put("bootstrap.servers", "10.21.235.181:9092,10.21.233.193:9092"); // Config the kafka broker servers
 																						// here.
 		// props.put("group.id", groupId);
 		props.put("key.deserializer", StringDeserializer.class.getName());
@@ -38,10 +38,11 @@ public class ClientListener implements Runnable {
 	public void executeCommand(String cont_id, int dest_machine) {
 
 		try {
-			String command = "/opt/kafka_2.11-0.9.0.0/migrate.sh " + cont_id + " " + dest_machine;
+			String registry="registry:443/";
+			String command = "/opt/kafka_2.11-0.9.0.0/migrate_v2.sh " + cont_id + " " + dest_machine+" "+registry;
 			//Process proc = Runtime.getRuntime().exec(command);
 			
-			ProcessBuilder builder = new ProcessBuilder("/opt/kafka_2.11-0.9.0.0/migrate.sh");
+			ProcessBuilder builder = new ProcessBuilder("/opt/kafka_2.11-0.9.0.0/migrate_v2.sh");
 		        builder.redirectErrorStream(true);
 		        Process p = builder.start();
 		        BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -71,7 +72,6 @@ public class ClientListener implements Runnable {
 					int dest_machine = Integer.parseInt(msg.substring(msg.indexOf(",") + 2, msg.length()).trim());
 					System.out.println(record.topic() + " Container  " + cont_id + " Dest: " + dest_machine+" "+hm_machine_ips.get(dest_machine));
 					executeCommand(cont_id, dest_machine);
-
 				}
 			}
 		} catch (Exception e) {
@@ -93,8 +93,17 @@ public class ClientListener implements Runnable {
 		String readLine = "";
 		String groupid = "consumer";
 		// Reading file MachineID to determine which topic to listen to
+		
+		
+		for (int i=0;i<args.length;i++)
+		{
+			System.out.println(args[i]+" "+i);
+			hm_machine_ips.put(i,args[i]);
+		}
+		
+		
 		try {
-			File file = new File("/opt/kafka_2.11-0.9.0.0/MachineID");
+			/*File file = new File("/opt/kafka_2.11-0.9.0.0/MachineID");
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			topic = "L" + br.readLine();
 			file=null;
@@ -107,7 +116,7 @@ public class ClientListener implements Runnable {
 				System.out.println("Mid "+m_id+" Hostname "+hostname_ip);
 				hm_machine_ips.put(m_id,hostname_ip);
 			}
-			System.out.println("Mid is "+hm_machine_ips.keySet());
+			System.out.println("Mid is "+hm_machine_ips.keySet());*/
 		}
 
 		catch (Exception e) {

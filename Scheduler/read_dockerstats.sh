@@ -18,7 +18,7 @@ if [[ "$1" ==  *"$CON"* ]]; then
 count=$((count + 1))
 else
 
-if [ `expr $count % $period` -eq 0 ];then
+if [ `expr $count % $period` -eq 0 ]; then
 MemAvail=$(cat /proc/meminfo | grep MemAvail | awk '{print $2}')
 
 

@@ -73,7 +73,7 @@ public class Individual {
 		{
 			if(random>rand_arr[i] && random<=rand_arr[i+1]) {
 				this.setGene(gene, i);
-				System.out.println( " Random "+random+" "+i);
+				//System.out.println( " Random "+random+" "+i);
 				break;
 			}
 		}

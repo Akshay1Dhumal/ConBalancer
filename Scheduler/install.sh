@@ -1,6 +1,6 @@
 #!/bin/bash
 #IMP : APPEND to /etc/default/grub about the memory access (Offline)
-
+#criu need to be sourced explicitly : not happening automatically
 #Install CRIU to machine
 
 id=4 # Id of the machine to be kept in /varzookeeper/data/myid file
@@ -10,7 +10,6 @@ echo "Installed Dependencies"
 wget http://download.openvz.org/criu/criu-3.4.tar.bz2
 tar -xvf criu-3.4.tar.bz2 
 cd criu-3.4
-gcc make
 make
 
 #Adding it to bashrc
@@ -27,21 +26,23 @@ source ~/.bashrc
 #Adding it to systemctl
 
 first2=":/home/"
-prefix=$(echo $PATH)
+#prefix=$(echo $PATH)
+prefix="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+#prefix="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 pref="$prefix$first2$hostname$third"
 
 echo "Adding this to Systemctl"
 echo $pref
 systemctl set-environment PATH=$pref
-systemctl show
+#systemctl show
 
 
 #change permission of docker.sock
 
 chmod 777 /var/run/docker.sock
-mkdir /var/zookeeper
-mkdir /var/zookeeper/data
-echo $id > /var/zoookeeper/data/myid
+#mkdir /var/zookeeper
+#mkdir /var/zookeeper/data
+#echo $id > /var/zoookeeper/data/myid
 
 
 

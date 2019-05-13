@@ -1,2 +1,2 @@
 #!/bin/bash
-./bin/kafka-server-start.sh  config/server.properties &
+/opt/kafka_2.11-0.9.0.0/bin/kafka-server-start.sh  /opt/kafka_2.11-0.9.0.0/config/server.properties &

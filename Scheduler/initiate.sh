@@ -1,12 +1,11 @@
 #!/bin/bash
-#Machine username and IP set here
+#Machine username and IP set here for zookeeper and kafka nodes
 user_name=(sparknode17 sparknode17)
 user_ips=(10.21.235.181 10.21.233.193)
 at_rate="@"
 topic_m="M"
 
-period=6 #Default period : ie 1 sec
-period=$1
+
 #ZOOKEEPER IPS SET HERE
 ips_z=(10.21.235.181 10.21.233.193)
 #KAFKA-BROKERS SET HERE
@@ -42,13 +41,13 @@ done
 zk_length=$(echo -n $zooks | wc -m)
 zooks=${zooks:0:($zk_length-1)}
 echo "Zookeeper IP"
-echo $zooks >> mylogs.txt
+echo $zooks
 
 
 
 
 
-echo "Initiating zookeeper and kafka on all nodes"
+echo "Machine Names of Zookeeper and kafka nodes"
 for i in "${!user_name[@]}"
 do
 	mach_name[$i]=${user_name[i]}$at_rate${user_ips[i]}
@@ -64,7 +63,8 @@ done
 #Starting Zookeeper on all machines
 for i  in "${!mach_name[@]}"
 do
-	ssh -t ${mach_name[i]}  "echo boss | ./opt/kafka_2.11-0.9.0.0/start_zk.sh"	
+	echo "Starting Zookeeper on"${mach_name[i]} 	
+	ssh -t ${mach_name[i]}  "echo boss | /opt/kafka_2.11-0.9.0.0/start_zk.sh" &
 done
 
 sleep 5
@@ -73,15 +73,16 @@ sleep 5
 
 for i  in "${!mach_name[@]}"
 do
-        ssh -t ${mach_name[i]}  "echo boss | ./opt/kafka_2.11-0.9.0.0/start_kafka.sh"
+	echo "Staring kafka server broker" ${mach_name[i]} 
+        ssh -t ${mach_name[i]}  "echo boss | /opt/kafka_2.11-0.9.0.0/start_kafka.sh" &
 done
 
 
-for i  in "${!mach_name[@]}"
-do
-	topic=$topic_m$i
-	ssh -t  ${mach_name[i]}  "echo boss | /opt/kafka_2.11-0.9.0.0/read_dockerstats.sh $period | /opt/kafka_2.11-0.9.0.0/bin/kafka-console-producer.sh --broker-list $brokers --topic $topic"
-done
+#for i  in "${!mach_name[@]}"
+#do
+#	topic=$topic_m$i
+#	ssh -t  ${mach_name[i]}  "echo boss | /opt/kafka_2.11-0.9.0.0/read_dockerstats.sh $period | /opt/kafka_2.11-0.9.0.0/bin/kafka-console-producer.sh --broker-list $brokers --topic $topic"
+#done
 
 
 #ssh -t  sparknode17@10.21.233.193  "echo boss | /opt/kafka_2.11-0.9.0.0/read_dockerstats.sh 6 | /opt/kafka_2.11-0.9.0.0/bin/kafka-console-producer.sh --broker-list $brokers --topic M1"

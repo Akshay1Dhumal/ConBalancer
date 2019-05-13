@@ -1,10 +1,36 @@
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
 public class GeneticAlgorithm {
+	class metric {
+		double variance;
+		double migration;
+
+		public double getVariance() {
+			return variance;
+		}
+
+		public metric(double variance, double migration) {
+			super();
+			this.variance = variance;
+			this.migration = migration;
+		}
+
+		public void setVariance(double variance) {
+			this.variance = variance;
+		}
+
+		public double getMigration() {
+			return migration;
+		}
+
+		public void setMigration(int migration) {
+			this.migration = migration;
+		}
+	}
+
 	private int populationSize;
 
 	/**
@@ -54,27 +80,25 @@ public class GeneticAlgorithm {
 		for (double p : parameter) {
 			mean += p;
 		}
-		return mean /(double) parameter.length;
+		return mean / (double) parameter.length;
 	}
 
-	public int numberMigrations(Individual individual,int [] init_placement) 
-	{
-		int total_migrations=0;
-		System.out.println();
-		System.out.print("Init placements ");
-		for(int i=0;i<init_placement.length;i++)
-		{
-			System.out.print(init_placement[i]-1);
-		}
-		System.out.print("  new "+individual.toString());
-		System.out.println();
-		
+	public int numberMigrations(Individual individual, int[] init_placement) {
+		int total_migrations = 0;
+		// System.out.println();
+		// System.out.print("Init placements ");
+	/*	for (int i = 0; i < init_placement.length; i++) {
+			System.out.print(init_placement[i]);
+		}*/
+		 //System.out.print(" new "+individual.toString());
+		// System.out.println();
+
 		for (int geneIndex = 0; geneIndex < individual.getChromosomeLength(); geneIndex++) {
-			if(individual.getGene(geneIndex)!=(init_placement[geneIndex]-1))
-			{
+			if (individual.getGene(geneIndex) != (init_placement[geneIndex] )) {
 				total_migrations++;
 			}
 		}
+		// System.out.print(" migrations "+total_migrations);
 		return total_migrations;
 	}
 
@@ -92,12 +116,12 @@ public class GeneticAlgorithm {
 	 *            the individual to evaluate
 	 * @return double The fitness value for individual
 	 */
-	public double calcFitness(Individual individual, HashMap<Integer, ArrayList<ContainerInfo>> hm,
-			ArrayList<ContainerInfo> c_info,int[] init_placements) {
+	public metric calcFitness(Individual individual, HashMap<Integer, ArrayList<ContainerInfo>> hm,
+			ArrayList<ContainerInfo> c_info, int[] init_placements) {
 
 		// Track number of correct genes
-		int  i = 0, p = 0;
-		double weight[]= {0.5,0.5,0,0,0,0};
+		int i = 0, p = 0;
+		// double weight[]= {0.5,0.5,0,0,0,0};
 		double parameter[][] = new double[6][hm.keySet().size()]; // statically fixing the number of parameter as 5 now.
 		/*
 		 * double total_cpu_machine[]=new double[hm.keySet().size()]; double
@@ -107,7 +131,7 @@ public class GeneticAlgorithm {
 		 * total_blocki_machine[]=new double[hm.keySet().size()]; double
 		 * total_blocko_machine[]=new double[hm.keySet().size()];
 		 */
-		double diff = 0, temp = 0, square = 0,variance=0;
+		double diff = 0, temp = 0, square = 0, variance = 0;
 		// Loop over individual's genes
 
 		for (p = 0; p <= 5; p++) {
@@ -120,13 +144,13 @@ public class GeneticAlgorithm {
 				 */
 				switch (p) {
 				case 0:
-					System.out.println(p+" "+geneIndex);
+					// System.out.println(p+" "+geneIndex);
 					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex)
-					.getContainer_stats().n_cpu_perc;
+							.getContainer_stats().n_cpu_perc;
 					break;
 				case 1:
 					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex)
-					.getContainer_stats().n_mem_usage;
+							.getContainer_stats().n_mem_usage;
 					break;
 				case 2:
 					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex).getContainer_stats().n_neti;
@@ -143,28 +167,31 @@ public class GeneticAlgorithm {
 				}
 			}
 		}
-		for(p=0;p<=5;p++) { //for all parameters
-			temp=0;
-		for (i = 0; i < hm.keySet().size(); i++) { //uptil all machines
-			diff = getMean(parameter[p]) - parameter[p][i];
-			square = diff * diff;
-			temp = temp + square;
-	//	System.out.println("Temp "+temp);
+		for (p = 0; p <= 5; p++) { // for all parameters
+			temp = 0;
+			for (i = 0; i < hm.keySet().size(); i++) { // uptil all machines
+				diff = getMean(parameter[p]) - parameter[p][i];
+				square = diff * diff;
+				temp = temp + square;
+				// System.out.println("Temp "+temp);
+			}
+			temp = (double) temp / (double) (hm.keySet().size());
+			// variance+=weight[p]*temp; //weight the parameters according to your choice
+			variance += temp; // weight the parameters according to your choice
 		}
-		temp=(double)temp/(double)(hm.keySet().size());
-		variance+=weight[p]*temp; //weight the parameters according to your choice
-		}
-		
-		//Use number of container migrations as part of variance :
-		
-		
-		System.out.println("Variance "+variance+ " Individual "+individual.toString()+" Migrations "+numberMigrations(individual, init_placements) );
+
+		// Use number of container migrations as part of variance :
+		metric m = new metric(variance, numberMigrations(individual, init_placements));
+
+		// System.out.println("Variance "+variance+ " Individual
+		// "+individual.toString()+" Migrations "+numberMigrations(individual,
+		// init_placements) );
 		// double fitness = (double) correctGenes / individual.getChromosomeLength();
 
 		// Store fitness
-		individual.setFitness(variance);
-
-		return variance;
+	//	individual.setFitness(variance);  //Commenting now 
+		return m;
+		// return variance;
 	}
 
 	/**
@@ -179,17 +206,73 @@ public class GeneticAlgorithm {
 	 *            the population to evaluate
 	 */
 	public void evalPopulation(Population population, HashMap<Integer, ArrayList<ContainerInfo>> hm,
-			ArrayList<ContainerInfo> c_info,int [] init_placements) {
+			ArrayList<ContainerInfo> c_info, int[] init_placements) {
+		metric marray[] = new metric[populationSize];
 		double populationFitness = 0;
 		int i = 0;
 		// Loop over population evaluating individuals and suming population
 		// fitness
 		for (Individual individual : population.getIndividuals()) {
-			populationFitness += calcFitness(individual, hm, c_info,init_placements); // Compute the variance for that individual
+			// populationFitness += calcFitness(individual, hm, c_info,init_placements); //
+			// Compute the variance for that individual
+			// i++;
+			metric ml = calcFitness(individual, hm, c_info, init_placements);
+			marray[i] = new metric(ml.variance, ml.migration);
 			i++;
 		}
+		double vari[] = new double[marray.length];
+		double mig[] = new double[marray.length];
+		double scaled_vari[] = new double[marray.length];
+		double scaled_mig[] = new double[marray.length];
 
+		for (int j = 0; j < marray.length; j++) {
+			mig[j] = marray[j].migration;
+			vari[j] = marray[j].variance;
+		}
+
+		double vmin = minArray(vari);
+		double vmax = maxArray(vari);
+		double mmin = minArray(mig);
+		double mmax = maxArray(mig);
+		System.out.println("MIN MAX  vari and migrations "+vmin+" "+vmax+" "+mmin+" "+mmax);
+		double vscaleFactor = vmax - vmin;
+		double mscaleFactor = mmax - mmin;
+		// scaling between [0..1] for starters. Will generalize later.
+		for (int x = 0; x < vari.length; x++) {
+			scaled_vari[x] = ((vari[x] - vmin) / vscaleFactor);
+			scaled_mig[x] = ((mig[x] - mmin) / mscaleFactor);
+		}
+		i=0;
+		double alpha=1,beta=0; //alpha weight factor for variance and beta for migrations
+		for (Individual individual : population.getIndividuals()) {
+			double score= (beta*scaled_mig[i])+(alpha*scaled_vari[i]);
+		//	System.out.println(scaled_mig[i]+" "+mig[i]+" scaled migration and fitness "+ scaled_vari[i]+" "+vari[i]+" score "+score);
+			individual.setFitness(score);
+			populationFitness += score;i++;
+		}
+		
+		
 		population.setPopulationFitness(populationFitness);
+	}
+
+	public double minArray(double[] vals) {
+		double min = vals[0];
+		for (int x = 1; x < vals.length; x++) {
+			if (vals[x] < min) {
+				min = vals[x];
+			}
+		}
+		return min;
+	}
+
+	public double maxArray(double[] vals) {
+		double max = vals[0];
+		for (int x = 1; x < vals.length; x++) {
+			if (vals[x] > max) {
+				max = vals[x];
+			}
+		}
+		return max;
 	}
 
 	/**
