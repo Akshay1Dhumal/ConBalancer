@@ -19,7 +19,6 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-
 class container_stats {
 	Stats s; // Structure containing the statistics
 	String container_id;
@@ -97,21 +96,24 @@ public class ConsumerLoop implements Runnable {
 	ContainerInfo con_info;
 	double total_cpu_usage, total_mem_usage, total_neti, total_neto, total_blocki, total_blocko;;
 	HashMap<Integer, ArrayList<ContainerInfo>> hm = new HashMap<>(); // each machine_topic as key with its container
-	ArrayList<ContainerInfo>c_info= new ArrayList<>();
+	ArrayList<ContainerInfo> c_info = new ArrayList<>();
 	DecimalFormat numberFormat = new DecimalFormat("#.00");
 	Logger logger = Logger.getLogger("MyLog");
 	FileHandler fh;
-	static int ga_calls=0;
-	
+	static int ga_calls = 0;
+
 	int wait_period = 5000; // Configurable
+
 	/**
 	 * Adds the container information to the list.
 	 * 
-	 *If the container and its data are already there, remove the existing data and update the new one.
-	 *@param a 
-	 *			 Container stats in specified format separated by : 
-	 *@param topic
-	 *			 The machine id form where the container resides
+	 * If the container and its data are already there, remove the existing data and
+	 * update the new one.
+	 * 
+	 * @param a
+	 *            Container stats in specified format separated by :
+	 * @param topic
+	 *            The machine id form where the container resides
 	 */
 	public void add_info(String[] a, int topic) {
 		try {
@@ -160,18 +162,21 @@ public class ConsumerLoop implements Runnable {
 		Properties props = new Properties();
 		props.put("zookeeper.connect", zookeeper);
 		props.put("group.id", groupId);
-	//	props.put("bootstrap.servers", "sparknode18:9092,sparknode19:9092,gas:9092"); // Config the kafka broker servers here.
-		props.put("bootstrap.servers", "10.21.235.181:9092,10.21.233.193:9092"); // Config the kafka broker servers here.
-	//	props.put("group.id", groupId);
+		// props.put("bootstrap.servers", "sparknode18:9092,sparknode19:9092,gas:9092");
+		// // Config the kafka broker servers here.
+		props.put("bootstrap.servers", "10.21.235.181:9092,10.21.233.193:9092"); // Config the kafka broker servers
+		// here.
+		// props.put("group.id", groupId);
 		props.put("key.deserializer", StringDeserializer.class.getName());
 		props.put("value.deserializer", StringDeserializer.class.getName());
-		
+
 		this.consumer = new KafkaConsumer<>(props);
 	}
+
 	/**
-	 * Preprocess the data 
+	 * Preprocess the data
 	 * 
-	 *Normalize all the parameters before applying the GA algo
+	 * Normalize all the parameters before applying the GA algo
 	 */
 	public void preProcessData() {
 		total_cpu_usage = total_mem_usage = total_neti = total_neto = total_blocki = total_blocko = 0;
@@ -187,8 +192,9 @@ public class ConsumerLoop implements Runnable {
 						+ al.get(i).getContainer_stats().cpu_perc + "  Mem perc "
 						+ al.get(i).getContainer_stats().mem_perc + " Mem Usage"
 						+ al.get(i).getContainer_stats().mem_usage + "  Mem Avail "
-						+ al.get(i).getContainer_stats().mem_avail + " block io " + al.get(i).getContainer_stats().block_o
-						+ " " + al.get(i).getContainer_stats().block_i+" "+al.get(i).getContainer_stats().net_i+" "+al.get(i).getContainer_stats().net_o);
+						+ al.get(i).getContainer_stats().mem_avail + " block io "
+						+ al.get(i).getContainer_stats().block_o + " " + al.get(i).getContainer_stats().block_i + " "
+						+ al.get(i).getContainer_stats().net_i + " " + al.get(i).getContainer_stats().net_o);
 
 				total_cpu_usage += al.get(i).getContainer_stats().cpu_perc;
 				total_mem_usage += al.get(i).getContainer_stats().mem_usage;
@@ -205,7 +211,7 @@ public class ConsumerLoop implements Runnable {
 			logger.info("TEST2 " + s);
 			ArrayList<ContainerInfo> al = hm.get(s);
 			for (int i = 0; i < al.size(); i++) {
-			
+
 				al.get(i).container_stats.n_mem_usage = Double
 						.parseDouble(numberFormat.format(al.get(i).container_stats.mem_usage / total_mem_usage));
 				al.get(i).container_stats.n_cpu_perc = Double
@@ -231,157 +237,164 @@ public class ConsumerLoop implements Runnable {
 		}
 
 	}
-	
-	public int getNumberContainer()
-	{
+
+	public int getNumberContainer() {
 		Set<Integer> keys = hm.keySet();
-	    int total_containers=0;
+		int total_containers = 0;
 		for (int s : keys) {
-			total_containers+= hm.get(s).size();
+			total_containers += hm.get(s).size();
 		}
 		return total_containers;
 	}
 
 	/**
-	 *Initialize GA algorithm
+	 * Initialize GA algorithm
 	 *
 	 */
-	public void GA_init()
-	{
-		  Logger logger = Logger.getLogger("MyLog");  
-		    FileHandler fh;  
-try {
-		 fh = new FileHandler("/home/gas/my1.log");  
-	        logger.addHandler(fh);
-	        SimpleFormatter formatter = new SimpleFormatter();  
-	        fh.setFormatter(formatter);  
-}
-catch(Exception e)
-{
-	e.printStackTrace();
-}
-	        
-		c_info=new ArrayList<>();
-		GeneticAlgorithm ga = new GeneticAlgorithm(100, 0.05, 0.95, 2);  //100, 0.01, 0.95, 2
+	public void GA_init() {
+		c_info = new ArrayList<>();
+		GeneticAlgorithm ga = new GeneticAlgorithm(1000, 0.1, 0.95, 1); // 100, 0.01, 0.95, 2
 		// Initialize population
 		Set<Integer> keys = hm.keySet();
-	
-		int machine_ids[] = new int[machine_list.size()];int i=0;
-		for(int a:machine_list) {
-			machine_ids[i]=a;i++;
+		int machine_ids[] = new int[machine_list.size()];
+		int i = 0;
+		for (int a : machine_list) {
+			machine_ids[i] = a;
+			i++;
 		}
-	
-		
+
 		for (int s : keys) {
-			ArrayList<ContainerInfo> al= hm.get(s);
-			for ( i = 0; i < al.size(); i++) {
+			ArrayList<ContainerInfo> al = hm.get(s);
+			for (i = 0; i < al.size(); i++) {
 				c_info.add(al.get(i));
 			}
 		}
-		i=0;	int initial_placements[]=new int[c_info.size()];
+		i = 0;
+		int initial_placements[] = new int[c_info.size()];
 		System.out.println("Unique container are");
-		for(ContainerInfo c:c_info)
-		{
-			System.out.println(c.container_id+" "+c.getMachine_id());
-			initial_placements[i]=c.getMachine_id();i++;
+
+		for (ContainerInfo c : c_info) {
+			System.out.println(c.container_id + " " + c.getMachine_id());
+			initial_placements[i] = c.getMachine_id();
+			i++;
 		}
-		
-		i=0;
-		Population population = ga.initPopulation(getNumberContainer(),machine_ids); //parameter : chromosome_length and machine id
-		//the chromosome length would be equal to number of containers: as each container would list its possible set of machine
+
+		i = 0;
+		Population population = ga.initPopulation(getNumberContainer(), machine_ids); // parameter : chromosome_length
+		// and machine id
+		// the chromosome length would be equal to number of containers: as each
+		// container would list its possible set of machine
 		// Evaluate population
-		
-		ga.evalPopulation(population,hm,c_info,initial_placements);
+		Individual ind = new Individual(initial_placements);
+
+		double init_var = ga.calc_init_variance(ind, hm, c_info);
+		System.out.println("Initial variance........................... " + init_var);
+
+		ga.evalPopulation(population, hm, c_info, initial_placements);
 		// Keep track of current generation
-		
+
 		int generation = 1;
 
 		/**
 		 * Start the evolution loop
 		 * 
-		 * Every genetic algorithm problem has different criteria for finishing.
-		 * In this case, we know what a perfect solution looks like (we don't
-		 * always!), so our isTerminationConditionMet method is very
-		 * straightforward: if there's a member of the population whose
-		 * chromosome is all ones, we're done!
+		 * Every genetic algorithm problem has different criteria for finishing. In this
+		 * case, we know what a perfect solution looks like (we don't always!), so our
+		 * isTerminationConditionMet method is very straightforward: if there's a member
+		 * of the population whose chromosome is all ones, we're done!
 		 */
-		double avg=0;
-	//	while (ga.isTerminationConditionMet(population) == false) {
-		while(generation<10) {
+		double avg = 0;
+		// while (ga.isTerminationConditionMet(population) == false) {
+		while (generation < 100) {
 			// Print fittest individual from population
-			System.out.println("Best solution: " + population.getFittest(0).toString()+" "+population.getFittest(0).getFitness());
-			avg=avg+population.getPopulationFitness();
-			//population.getPopulationFitness();
+			// System.out.println("Best solution: " + population.getFittest(0).toString()+"
+			// "+population.getFittest(0).getFitness());
+			avg = avg + population.getPopulationFitness();
+			// population.getPopulationFitness();
 			// Apply crossover
-			population = ga.crossoverPopulation(population,machine_ids);
-
+			population = ga.crossoverPopulation(population, machine_ids, hm, c_info);
+			// System.out.println("cr - "+population.getFittest(0).getFitness());
 			// Apply mutation
-			population = ga.mutatePopulation(population);
-
+			population = ga.mutatePopulation(population, machine_ids);
+			// System.out.println("mt - "+population.getFittest(0).getFitness());
 			// Evaluate population
-			ga.evalPopulation(population,hm,c_info,initial_placements);
 
+			ga.evalPopulation(population, hm, c_info, initial_placements);
+
+			// System.out.println("new
+			// "+Arrays.toString(population.getIndividual(0).getChromosome()));
+			
+			/* Individual individualss[] = population.getIndividuals(); 
+			 for(Individual in:individualss) {
+			  System.out.println("new pop "+Arrays.toString(in.getChromosome())+" .. "+in.getFitness()); }
+			 */
+
+			 System.out.println("ev - "+population.getFittest(0).getFitness());
 			// Increment the current generation
 			generation++;
 		}
 
 		/**
-		 * We're out of the loop now, which means we have a perfect solution on
-		 * our hands. Let's print it out to confirm that it is actually all
-		 * ones, as promised.
+		 * We're out of the loop now, which means we have a perfect solution on our
+		 * hands. Let's print it out to confirm that it is actually all ones, as
+		 * promised.
 		 */
 		System.out.println("Found solution in " + generation + " generations");
-		System.out.println("Best solution: " + population.getFittest(0).getFitness()+" "+population.getFittest(0));
+		System.out.println("Best solution: " + population.getFittest(0).getFitness() + " " + population.getFittest(0));
 		try {
-	        // the following statement is used to log any messages  
-	        //logger.info( population.getFittest(0).getFitness()+"\n");
-			logger.info(avg/10+" ");
-		}
-		catch(Exception e)
-		{
+			// the following statement is used to log any messages
+			// logger.info( population.getFittest(0).getFitness()+"\n");
+			logger.info(avg / 10 + " ");
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		int[] fittest=population.getFittest(0).getIntegerRepresentation();
+		int[] fittest = population.getFittest(0).getIntegerRepresentation();
 		/*
 		 * Send the migration data to specific set of machines
 		 */
-		System.out.println("Result producer started ...");
-		for(i=0;i<fittest.length;i++)
-		{
-			//System.out.println( c_info.get(i).getContainer_id()+"New machine "+fittest[i]+" Old machine "+(initial_placements[i]));
-		//	System.out.println("Machine "+(initial_placements[i])+" "+ c_info.get(i).getContainer_id()+"  "+ c_info.get(i).getContainer_stats().cpu_perc+" "+c_info.get(i).getContainer_stats().mem_perc);
-			
-			if(fittest[i]!=initial_placements[i])
-			{
-				System.out.println("L"+(initial_placements[i])+" Listening ... Migrate "+ c_info.get(i).getContainer_id()+"  "+ c_info.get(i).getContainer_stats().cpu_perc+" "+c_info.get(i).getContainer_stats().mem_perc+" to L"+fittest[i]);
-				MultiBrokerProducer.produce("L"+(initial_placements[i]),c_info.get(i).getContainer_id()+",L"+fittest[i]);
+		if (init_var > population.getFittest(0).getFitness()) { // if initial varaince is more than GA variance then
+			// only migrate
+			System.out.println("Condition met...Migrating");
+			for (i = 0; i < fittest.length; i++) {
+				// System.out.println( c_info.get(i).getContainer_id()+"New machine
+				// "+fittest[i]+" Old machine "+(initial_placements[i]));
+				// System.out.println("Machine "+(initial_placements[i])+" "+
+				// c_info.get(i).getContainer_id()+" "+
+				// c_info.get(i).getContainer_stats().cpu_perc+"
+				// "+c_info.get(i).getContainer_stats().mem_perc);
+
+				if (fittest[i] != initial_placements[i]) {
+					System.out.println("L" + (initial_placements[i]) + " Listening ... Migrate "
+							+ c_info.get(i).getContainer_id() + "  " + c_info.get(i).getContainer_stats().cpu_perc + " "
+							+ c_info.get(i).getContainer_stats().mem_perc + " to L" + fittest[i]);
+				
+				MultiBrokerProducer.produce("L" + (initial_placements[i]),c_info.get(i).getContainer_id() + ",L" + fittest[i]);  //Comment this line if you dont need to migrate containers
+				}
 			}
 		}
 
 	}
-	
-	
-	
+
 	@Override
 	public void run() {
 		try {
-			int topic ;
+			int topic;
 			String msg = null;
-			//fh = new FileHandler("/home/gas/Desktop/Docker_exp/MyLogFile.log");
-			//logger.addHandler(fh);
-			//SimpleFormatter formatter = new SimpleFormatter();
-			//fh.setFormatter(formatter);
-			
+			// fh = new FileHandler("/home/gas/Desktop/Docker_exp/MyLogFile.log");
+			// logger.addHandler(fh);
+			// SimpleFormatter formatter = new SimpleFormatter();
+			// fh.setFormatter(formatter);
+
 			int flag = 0, flag_time = 0;
 			consumer.subscribe(topics);
 			/*
 			 * sparknode18 : abe7713df8be : 0.00% : 8.75 MiB / 7.816 GiB : 0.11% : 15.1 kB /
 			 * 648 B : 7.38 MB / 0 B : 8195200 : 6242336 : 8 : 1 : total=2157 N0=2157 :
 			 */
-			for(int h=0;h<4;h++) {// to filter out old records. In 4 polls records are consumed. 
+			for (int h = 0; h < 4; h++) {// to filter out old records. In 4 polls records are consumed.
 				ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);
 				System.out.println("Initial Records Are " + records.count());
-				}
+			}
 			while (true) {
 				/*
 				 * consumer.pause(); //This is done to remove all the accommodated previous data
@@ -391,18 +404,19 @@ catch(Exception e)
 					startTime = System.currentTimeMillis();
 					flag_time = 1;
 				}
-				
+
 				ConsumerRecords<String, String> records = consumer.poll(Long.MAX_VALUE);
 				System.out.println("Records are " + records.count());
-				
+
 				if (flag != 0) {
 					for (ConsumerRecord<String, String> record : records) {
-						topic = Integer.parseInt(record.topic().substring(1,record.topic().length()));
+						topic = Integer.parseInt(record.topic().substring(1, record.topic().length()));
 						msg = record.value();
-						System.out.println(msg+ "   "+topic);
+						System.out.println(msg + "   " + topic);
 						String[] a = msg.split(":"); // a[0] is container id
 
-						if (machine_list.contains(topic)) // if machine exists then simply check whether all containers ARE PART OF IT
+						if (machine_list.contains(topic)) // if machine exists then simply check whether all containers
+							// ARE PART OF IT
 						{
 							add_info(a, topic);// System.out.println("If condition");
 						} else // create a new machine. Add all containers of it.
@@ -411,41 +425,40 @@ catch(Exception e)
 							machine_list.add(topic);
 							add_info(a, topic);
 						}
-					//System.out.println("END ..............................................................");
+						// System.out.println("END
+						// ..............................................................");
 					}
 					stopTime = System.currentTimeMillis();
 					elapsedTime = stopTime - startTime;
 					logger.info("Elapsed time " + elapsedTime);
-					if (elapsedTime > 7000) {//tunable to get good number of records.
+					if (elapsedTime > 7000) {// tunable to get good number of records.
 						flag_time = 0;
 						preProcessData();
-						//Test for loop
-						int test=1;
-					 //
-							
-						if(ga_calls<1)
-						{
-						//	for(int k=0;k<20;k++) {
-							//	System.out.println(test+" TEST.................................................................................................................................................");
-						GA_init(); 
-							//}
-						ga_calls++;
-						}
-						else
-						{
+						// Test for loop
+						int test = 1;
+						//
+
+						if (ga_calls < 1) {
+							// for(int k=0;k<20;k++) {
+							// System.out.println(test+"
+							// TEST.................................................................................................................................................");
+							GA_init();
+							// }
+							ga_calls++;
+						} else {
 							System.exit(0);
 						}
-						
+
 					}
 				}
 				flag = 1;
-				
-			} //end of while loop
-	
+
+			} // end of while loop
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			
+
 			consumer.commitSync();
 			consumer.close();
 		}
@@ -457,11 +470,11 @@ catch(Exception e)
 
 	public static void main(String[] args) {
 		int numConsumers = 1;
-		System.out.println("Hello world");
+		//.out.println("Hello world");
 		String groupid = "consumer-grp";
-		//String topic[] = new String[] { "M2", "M1", "M3" };
-		String topic[] = new String[] { "M0", "M1","M2","M3" };
-		
+		// String topic[] = new String[] { "M2", "M1", "M3" };
+		String topic[] = new String[] { "M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11",
+		"M12" };
 
 		List<String> topics = Arrays.asList(topic);
 		ExecutorService executor = Executors.newFixedThreadPool(numConsumers);

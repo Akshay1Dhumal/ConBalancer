@@ -3,6 +3,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import javax.management.loading.MLet;
+
+import scala.util.Random;
+
 public class GeneticAlgorithm {
 	class metric {
 		double variance;
@@ -16,6 +20,10 @@ public class GeneticAlgorithm {
 			super();
 			this.variance = variance;
 			this.migration = migration;
+		}
+
+		public metric() {
+
 		}
 
 		public void setVariance(double variance) {
@@ -87,14 +95,15 @@ public class GeneticAlgorithm {
 		int total_migrations = 0;
 		// System.out.println();
 		// System.out.print("Init placements ");
-	/*	for (int i = 0; i < init_placement.length; i++) {
-			System.out.print(init_placement[i]);
-		}*/
-		 //System.out.print(" new "+individual.toString());
+		/*
+		 * for (int i = 0; i < init_placement.length; i++) {
+		 * System.out.print(init_placement[i]); }
+		 */
+		// System.out.print(" new "+individual.toString());
 		// System.out.println();
 
 		for (int geneIndex = 0; geneIndex < individual.getChromosomeLength(); geneIndex++) {
-			if (individual.getGene(geneIndex) != (init_placement[geneIndex] )) {
+			if (individual.getGene(geneIndex) != (init_placement[geneIndex])) {
 				total_migrations++;
 			}
 		}
@@ -116,6 +125,73 @@ public class GeneticAlgorithm {
 	 *            the individual to evaluate
 	 * @return double The fitness value for individual
 	 */
+
+	public double calc_init_variance(Individual individual, HashMap<Integer, ArrayList<ContainerInfo>> hm,
+			ArrayList<ContainerInfo> c_info) {
+		// Track number of correct genes
+		int i = 0, p = 0;
+		// double weight[]= {0.5,0.5,0,0,0,0};
+		double parameter[][] = new double[6][hm.keySet().size()]; // statically fixing the number of parameter as 5 now.
+		/*
+		 * double total_cpu_machine[]=new double[hm.keySet().size()]; double
+		 * total_mem_machine[]=new double[hm.keySet().size()]; double
+		 * total_neti_machine[]=new double[hm.keySet().size()]; double
+		 * total_neto_machine[]=new double[hm.keySet().size()]; double
+		 * total_blocki_machine[]=new double[hm.keySet().size()]; double
+		 * total_blocko_machine[]=new double[hm.keySet().size()];
+		 */
+		double diff = 0, temp = 0, square = 0, variance = 0;
+		// Loop over individual's genes
+
+		for (p = 0; p <= 5; p++) {
+			for (int geneIndex = 0; geneIndex < individual.getChromosomeLength(); geneIndex++) {
+				/*
+				 * total_cpu_machine[individual.getGene(geneIndex)]+=c_info.get(geneIndex).
+				 * getContainer_stats().n_cpu_perc;
+				 * total_mem_machine[individual.getGene(geneIndex)]+=c_info.get(geneIndex).
+				 * getContainer_stats().n_mem_usage;
+				 */
+				switch (p) {
+				case 0:
+					// System.out.println(p+" "+geneIndex);
+					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex)
+							.getContainer_stats().n_cpu_perc;
+					break;
+				case 1:
+					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex)
+							.getContainer_stats().n_mem_usage;
+					break;
+				case 2:
+					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex).getContainer_stats().n_neti;
+					break;
+				case 3:
+					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex).getContainer_stats().n_neto;
+					break;
+				case 4:
+					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex).getContainer_stats().n_blocki;
+					break;
+				case 5:
+					parameter[p][individual.getGene(geneIndex)] += c_info.get(geneIndex).getContainer_stats().n_blocko;
+					break;
+				}
+			}
+		}
+		for (p = 0; p <= 5; p++) { // for all parameters
+			temp = 0;
+			for (i = 0; i < hm.keySet().size(); i++) { // uptil all machines
+				diff = getMean(parameter[p]) - parameter[p][i];
+				square = diff * diff;
+				temp = temp + square;
+				// System.out.println("Temp "+temp);
+			}
+			temp = (double) temp / (double) (hm.keySet().size());
+			// variance+=weight[p]*temp; //weight the parameters according to your choice
+			variance += temp; // weight the parameters according to your choice
+		}
+
+		return variance;
+	}
+
 	public metric calcFitness(Individual individual, HashMap<Integer, ArrayList<ContainerInfo>> hm,
 			ArrayList<ContainerInfo> c_info, int[] init_placements) {
 
@@ -189,7 +265,7 @@ public class GeneticAlgorithm {
 		// double fitness = (double) correctGenes / individual.getChromosomeLength();
 
 		// Store fitness
-	//	individual.setFitness(variance);  //Commenting now 
+		// individual.setFitness(variance); //Commenting now
 		return m;
 		// return variance;
 	}
@@ -216,8 +292,11 @@ public class GeneticAlgorithm {
 			// populationFitness += calcFitness(individual, hm, c_info,init_placements); //
 			// Compute the variance for that individual
 			// i++;
-			metric ml = calcFitness(individual, hm, c_info, init_placements);
+			metric ml = new metric();
+			ml = calcFitness(individual, hm, c_info, init_placements);
 			marray[i] = new metric(ml.variance, ml.migration);
+			individual.setFitness(ml.variance);
+			populationFitness += ml.variance;
 			i++;
 		}
 		double vari[] = new double[marray.length];
@@ -234,7 +313,7 @@ public class GeneticAlgorithm {
 		double vmax = maxArray(vari);
 		double mmin = minArray(mig);
 		double mmax = maxArray(mig);
-		System.out.println("MIN MAX  vari and migrations "+vmin+" "+vmax+" "+mmin+" "+mmax);
+		System.out.println("MIN MAX  vari and migrations " + vmin + " " + vmax + " " + mmin + " " + mmax);
 		double vscaleFactor = vmax - vmin;
 		double mscaleFactor = mmax - mmin;
 		// scaling between [0..1] for starters. Will generalize later.
@@ -242,16 +321,19 @@ public class GeneticAlgorithm {
 			scaled_vari[x] = ((vari[x] - vmin) / vscaleFactor);
 			scaled_mig[x] = ((mig[x] - mmin) / mscaleFactor);
 		}
-		i=0;
-		double alpha=1,beta=0; //alpha weight factor for variance and beta for migrations
+		i = 0;
+		double alpha = 1, beta = 0; // alpha weight factor for variance and beta for migrations
 		for (Individual individual : population.getIndividuals()) {
-			double score= (beta*scaled_mig[i])+(alpha*scaled_vari[i]);
-		//	System.out.println(scaled_mig[i]+" "+mig[i]+" scaled migration and fitness "+ scaled_vari[i]+" "+vari[i]+" score "+score);
-			individual.setFitness(score);
-			populationFitness += score;i++;
+			double score = (beta * scaled_mig[i]) + (alpha * scaled_vari[i]);
+			// System.out.println(scaled_mig[i]+" "+mig[i]+" scaled migration and fitness "+
+			// scaled_vari[i]+" "+vari[i]+" score "+score);
+			// individual.setFitness(score);
+			// individual.setFitness(vari[i]);
+			// populationFitness += score;
+			// populationFitness += vari[i];
+			i++;
 		}
-		
-		
+
 		population.setPopulationFitness(populationFitness);
 	}
 
@@ -307,8 +389,8 @@ public class GeneticAlgorithm {
 
 		// Spin roulette wheel
 		double populationFitness = population.getPopulationFitness();
-		double rouletteWheelPosition = Math.random() * populationFitness;
-
+		double rouletteWheelPosition = Math.random() * populationFitness * 0.05;
+		// System.out.println(rouletteWheelPosition+" wheel position");
 		// Find parent
 		double spinWheel = 0;
 		for (Individual individual : individuals) {
@@ -342,17 +424,22 @@ public class GeneticAlgorithm {
 	 *            The population to apply crossover to
 	 * @return The new population
 	 */
-	public Population crossoverPopulation(Population population, int[] machine_ids) {
+	public Population crossoverPopulation(Population population, int[] machine_ids,
+			HashMap<Integer, ArrayList<ContainerInfo>> hm, ArrayList<ContainerInfo> c_info) {
 		// Create new population
 		Population newPopulation = new Population(population.size());
 
 		// Loop over current population by fitness
 		for (int populationIndex = 0; populationIndex < population.size(); populationIndex++) {
 			Individual parent1 = population.getFittest(populationIndex);
-
+			// double ran=Math.random();
+			if (populationIndex < this.elitismCount)
+				System.out.println("Elite fitness " + parent1.getFitness());
 			// Apply crossover to this individual?
-			if (this.crossoverRate > Math.random() && populationIndex >= this.elitismCount) {
-				// Initialize offspring
+
+			// if (this.crossoverRate >ran && populationIndex >= this.elitismCount) {
+			// Initialize offspring
+			if (populationIndex >= this.elitismCount) {
 				Individual offspring = new Individual(parent1.getChromosomeLength(), machine_ids);
 
 				// Find second parent
@@ -361,7 +448,7 @@ public class GeneticAlgorithm {
 				// Loop over genome
 				for (int geneIndex = 0; geneIndex < parent1.getChromosomeLength(); geneIndex++) {
 					// Use half of parent1's genes and half of parent2's genes
-					if (0.5 > Math.random()) {
+					if (Math.random() > this.crossoverRate) {
 						offspring.setGene(geneIndex, parent1.getGene(geneIndex));
 					} else {
 						offspring.setGene(geneIndex, parent2.getGene(geneIndex));
@@ -370,12 +457,26 @@ public class GeneticAlgorithm {
 
 				// Add offspring to new population
 				newPopulation.setIndividual(populationIndex, offspring);
+				// newPopulation.getIndividual(populationIndex).setFitness(calc_init_variance(offspring,
+				// hm, c_info));
+				// System.out.println("HERE I COME "+
+				// newPopulation.getIndividual(populationIndex).getFitness());
 			} else {
 				// Add individual to new population without applying crossover
 				newPopulation.setIndividual(populationIndex, parent1);
+				newPopulation.getIndividual(populationIndex).setFitness(calc_init_variance(parent1, hm, c_info));
+				// System.out.println("HERE I COME "+
+				// newPopulation.getIndividual(populationIndex).getFitness()+Arrays.toString(parent1.getChromosome()));
 			}
 		}
-
+		// .out.println("Fittess best new : "+newPopulation.getFittest(0).getFitness());
+		/*
+		 * System.out.println("new "+Arrays.toString(newPopulation.getIndividual(0).
+		 * getChromosome())); Individual individualss[] =
+		 * newPopulation.getIndividuals(); for(Individual in: individualss) {
+		 * System.out.println("new pop "+Arrays.toString(in.getChromosome())+" .. "+in.
+		 * getFitness()); }
+		 */
 		return newPopulation;
 	}
 
@@ -395,10 +496,10 @@ public class GeneticAlgorithm {
 	 *            The population to apply mutation to
 	 * @return The mutated population
 	 */
-	public Population mutatePopulation(Population population) {
+	public Population mutatePopulation(Population population, int[] machine_ids) {
 		// Initialize new population
 		Population newPopulation = new Population(this.populationSize);
-
+		// Random ram=new Random();
 		// Loop over current population by fitness
 		for (int populationIndex = 0; populationIndex < population.size(); populationIndex++) {
 			Individual individual = population.getFittest(populationIndex);
@@ -410,12 +511,18 @@ public class GeneticAlgorithm {
 					// Does this gene need mutation?
 					if (this.mutationRate > Math.random()) {
 						// Get new gene
-						int newGene = 1;
-						if (individual.getGene(geneIndex) == 1) {
-							newGene = 0;
-						}
-						// Mutate gene
-						individual.setGene(geneIndex, newGene);
+						Random ram = new Random();
+						int x = ram.nextInt(machine_ids.length);
+						int y = ram.nextInt(machine_ids.length);
+						int xx = individual.getGene(x);
+						int yy = individual.getGene(y);
+						// int newGene = 1;
+						/*
+						 * if (individual.getGene(geneIndex) == 1) { newGene = 0; } // Mutate gene
+						 * individual.setGene(geneIndex, newGene);
+						 */
+						individual.setGene(x, yy); // SWAP MUTATION
+						individual.setGene(y, xx);
 					}
 				}
 			}

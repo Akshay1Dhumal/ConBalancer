@@ -1,8 +1,8 @@
 #!/bin/bash
 #Machine username and IP set here
 
-IFS=$'\n' read -d '' -r -a user_name < user_name_all
-IFS=$'\n' read -d '' -r -a user_ips < user_ips_all
+IFS=$'\n' read -d '' -r -a user_name < user_name
+IFS=$'\n' read -d '' -r -a user_ips < user_ips
 
 
 

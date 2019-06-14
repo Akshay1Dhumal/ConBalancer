@@ -24,7 +24,7 @@ public class MultiBrokerProducer {
 		new MultiBrokerProducer();
 		Random random = new Random();
 		System.out.println("Listener msg "+ topic+" " +msg);
-		producer.send(new KeyedMessage<Integer, String>(topic, msg));
+		//producer.send(new KeyedMessage<Integer, String>(topic, msg));
        /* for (long i = 0; i < 10; i++) {
             Integer key = random.nextInt(255);
             msg = "This message is for key - " + key;

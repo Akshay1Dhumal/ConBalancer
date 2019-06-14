@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.Random;
 public class Population {
 	private Individual population[];
-	private double populationFitness = -1;
+	private double populationFitness = Double.MAX_VALUE;
 
 	/**
 	 * Initializes blank population of individuals
@@ -69,8 +69,10 @@ public class Population {
 			@Override
 			public int compare(Individual o1, Individual o2) {
 				if (o1.getFitness() < o2.getFitness()) {
+					//System.out.println(o1.getFitness()+" FITNESS "+o2.getFitness());
 					return -1;
 				} else if (o1.getFitness() > o2.getFitness()) {
+					//System.out.println(o1.getFitness()+" FITNESS "+o2.getFitness());
 					return 1;
 				}
 				return 0;

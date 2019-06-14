@@ -1,10 +1,11 @@
 
 
+import java.util.Arrays;
 import java.util.Random;
 
 public class Individual {
 	private int[] chromosome;
-	private double fitness = -1;
+	private double fitness =Double.MAX_VALUE;
 
 	/**
 	 * Initializes individual with specific chromosome
@@ -55,18 +56,21 @@ public class Individual {
 	 * @param chromosomeLength
 	 *            The length of the individuals chromosome
 	 */
+
 	public Individual(int chromosomeLength,int[] machine_ids)  {
 		int i;
 		double rand_arr[]=new double[machine_ids.length+1];
 		this.chromosome = new int[chromosomeLength];
+		Random ran=new Random();		
+		//System.out.println(Arrays.toString(chromosome));
 		for (int gene = 0; gene < chromosomeLength; gene++) {
+	
+		//double random= Math.random();
 		
-		double random= Math.random();
-		
-		for(i=0;i<machine_ids.length;i++)
+		/*for(i=0;i<machine_ids.length;i++)
 		{
 			rand_arr[i]=((double)i/(double)machine_ids.length);
-			
+			//System.out.println("Rand "+rand_arr[i]);
 		}
 		rand_arr[i]=1;
 		for(i=0;i<machine_ids.length;i++)
@@ -76,8 +80,11 @@ public class Individual {
 				//System.out.println( " Random "+random+" "+i);
 				break;
 			}
-		}
-		//this.setGene(gene, rand.nextInt(machine_ids.length));
+		}*/
+		
+		int s=ran.nextInt(machine_ids.length);
+		//System.out.println(s+" ........... "+machine_ids.length);
+		this.setGene(gene,s);
 			
 			
 		/*	if (0.5 < Math.random()) {
