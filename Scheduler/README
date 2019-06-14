@@ -19,13 +19,42 @@ ion is 1.13.0.
 12. Now run a docker container.Example : docker run -d --name tomcatdemo tomcat:alpine
 13. If the registry is running, migrate the container: ./migrate_v2.sh <tomcatdemo> targetnode@ipaddress registrynode:443/
 
-
-
-
  To start a registry: 
+1. mkdir -p certs && openssl req  -newkey rsa:4096 -nodes -sha256 -keyout certs/domain.key  -x509 -days 365 -out certs/domain.crt
+
+2. docker run -d  --name registry  -v /home/<hostname>/certs:/certs   -e REGISTRY_HTTP_ADDR=0.0.0.0:443   -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt   -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key   -p 443:443 registry:2 
 
 
 
+Create kafka and zookeeper nodes. Treat the nodes as a manager for all worker nodes. Configure setting of kafka and zookeeper as per the ip address.
+On each node, start zookeeper and kafka broker node by: ./start_zk.sh and ./start_kafka.sh
 
-To start optimizer:
+Configure the file user_ips and user_name in the manager node. 
 
+Start listener on all worker node from manager node: 
+./start_listeners,sh
+
+Start producer on all worker nodes from manager node:
+./start_producerts.sh
+
+To start optimizer go to src folder and run:
+
+/opt/java/jdk1.8.0_144/bin/java -Dfile.encoding=UTF-8 -classpath /home/gas/Projects/ConBalancer/Scheduler/bin:/opt/kafka_2.11-0.9.0.0/libs/aopalliance-repackaged-2.4.0-b31.jar:/opt/kafka_2.11-0.9.0.0/libs/argparse4j-0.5.0.jar:/opt/kafka_2.11-0.9.0.0/libs/connect-api-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/connect-file-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/connect-json-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/connect-runtime-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/hk2-api-2.4.0-b31.jar:/opt/kafka_2.11-0.9.0.0/libs/hk2-locator-2.4.0-b31.jar:/opt/kafka_2.11-0.9.0.0/libs/hk2-utils-2.4.0-b31.jar:/opt/kafka_2.11-0.9.0.0/libs/jackson-annotations-2.5.0.jar:/opt/kafka_2.11-0.9.0.0/libs/jackson-core-2.5.4.jar:/opt/kafka_2.11-0.9.0.0/libs/jackson-databind-2.5.4.jar:/opt/kafka_2.11-0.9.0.0/libs/jackson-jaxrs-base-2.5.4.jar:/opt/kafka_2.11-0.9.0.0/libs/jackson-jaxrs-json-provider-2.5.4.jar:/opt/kafka_2.11-0.9.0.0/libs/jackson-module-jaxb-annotations-2.5.4.jar:/opt/kafka_2.11-0.9.0.0/libs/javassist-3.18.1-GA.jar:/opt/kafka_2.11-0.9.0.0/libs/javax.annotation-api-1.2.jar:/opt/kafka_2.11-0.9.0.0/libs/javax.inject-1.jar:/opt/kafka_2.11-0.9.0.0/libs/javax.inject-2.4.0-b31.jar:/opt/kafka_2.11-0.9.0.0/libs/javax.servlet-api-3.1.0.jar:/opt/kafka_2.11-0.9.0.0/libs/javax.ws.rs-api-2.0.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jersey-client-2.22.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jersey-common-2.22.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jersey-container-servlet-2.22.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jersey-container-servlet-core-2.22.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jersey-guava-2.22.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jersey-media-jaxb-2.22.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jersey-server-2.22.1.jar:/opt/kafka_2.11-0.9.0.0/libs/jetty-http-9.2.12.v20150709.jar:/opt/kafka_2.11-0.9.0.0/libs/jetty-io-9.2.12.v20150709.jar:/opt/kafka_2.11-0.9.0.0/libs/jetty-security-9.2.12.v20150709.jar:/opt/kafka_2.11-0.9.0.0/libs/jetty-server-9.2.12.v20150709.jar:/opt/kafka_2.11-0.9.0.0/libs/jetty-servlet-9.2.12.v20150709.jar:/opt/kafka_2.11-0.9.0.0/libs/jetty-util-9.2.12.v20150709.jar:/opt/kafka_2.11-0.9.0.0/libs/jopt-simple-3.2.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka_2.11-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka_2.11-0.9.0.0-javadoc.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka_2.11-0.9.0.0-scaladoc.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka_2.11-0.9.0.0-sources.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka_2.11-0.9.0.0-test.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka-clients-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka-log4j-appender-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/kafka-tools-0.9.0.0.jar:/opt/kafka_2.11-0.9.0.0/libs/log4j-1.2.17.jar:/opt/kafka_2.11-0.9.0.0/libs/lz4-1.2.0.jar:/opt/kafka_2.11-0.9.0.0/libs/metrics-core-2.2.0.jar:/opt/kafka_2.11-0.9.0.0/libs/osgi-resource-locator-1.0.1.jar:/opt/kafka_2.11-0.9.0.0/libs/scala-library-2.11.7.jar:/opt/kafka_2.11-0.9.0.0/libs/scala-parser-combinators_2.11-1.0.4.jar:/opt/kafka_2.11-0.9.0.0/libs/scala-xml_2.11-1.0.4.jar:/opt/kafka_2.11-0.9.0.0/libs/slf4j-api-1.7.6.jar:/opt/kafka_2.11-0.9.0.0/libs/slf4j-log4j12-1.7.6.jar:/opt/kafka_2.11-0.9.0.0/libs/snappy-java-1.1.1.7.jar:/opt/kafka_2.11-0.9.0.0/libs/validation-api-1.1.0.Final.jar:/opt/kafka_2.11-0.9.0.0/libs/zkclient-0.7.jar:/opt/kafka_2.11-0.9.0.0/libs/zookeeper-3.4.6.jar ConsumerLoop
+
+
+To stop all containers from the manager: 
+./stopcon_global.sh
+
+Stooping producers or consumers:
+./stop_listeners.sh
+./stop_producers.sh 
+
+
+Experiment test:
+Configure the SWARM cluster. Create any one node as Swarm manager node among all workers by: docker swarm init
+Fetch the token to join from manager node: docker swarm join-token worker
+
+Join all other slave nodes to the manager worker node by the token: docker swarm join --token <TOKEN>
+
+swarm_test.sh and swarm_stop.sh files should be configured for any test workload. 
+ 
