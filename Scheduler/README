@@ -58,3 +58,56 @@ Join all other slave nodes to the manager worker node by the token: docker swarm
 
 swarm_test.sh and swarm_stop.sh files should be configured for any test workload. 
  
+ 
+ 
+Details for each of the scripts used in the system.
+
+1. Starting/Stopping Zookeeper and Kafka nodes(Brokers)
+
+start/stop_zk and start/stop_kafka.sh: Starting the zookeeper and Kafka server on the local system.
+
+dis_initiate.sh: Kill the Kafka server and Zookeeper server form one system. (Needs configuration)
+
+Delete_logs.sh: Responsible for removing all logs. Better to stop zookeeper and Kafka server and remove all logs. (Extreme). Use on each system separately.
+
+
+2. Starting and stopping producers/consumers.
+
+start_producers.sh: Starts producers on all machines (uses read_dockerstats.sh) Based on user_ips and user_names files. The user needs to configure these files for each worker node.
+stop_producers .sh: Stops Kafka producers across all machines
+
+start_listeners.sh: Starts Listener on every worker node.
+
+stop_listeners.sh: Stops the Listener on every node.
+
+3. Script file for migrating container
+
+migrate_v2: For migrating using the local registry. (faster)
+
+migrate_v1 .sh: Full migration involving file system. (slower)
+
+read_dockerstats.sh: Gets all container stats along with the system information. (LOCAL) 
+
+4. Docker-related scripts:
+
+runcontainer.sh: Runs containers on all nodes.
+
+stopcon_global.sh: Stops and removes containers from all worker nodes.
+
+run.sh: Configure what containers to run on each node.
+
+run_scheduler.sh: Executes then container balancer algorithm. The code is present in the "src" folder.
+
+read_logs.sh: For reading container related data (bogo operations per second).
+
+5. Installation and configuration scripts:
+
+install_docker.sh: Installing docker on the machine.
+
+install.sh: Installing CRIU-v4 on the system. Updates bashrc and zookeeper configuration files. Run after install_docker.sh
+
+sys_update.sh: Updates permission and PATH after Docker restarts. Updates systemctl which is required.
+
+MachineId and MachineInfo: Configure these files for every system.
+Configure zookeeper and Kafka server as needed along with IP address and ID. Required files (config/server.properties and config/zookeeper.properties) 
+ 
