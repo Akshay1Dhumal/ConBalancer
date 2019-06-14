@@ -1,0 +1,31 @@
+The file describes the instructions to install the framework on the BOSS MOOL operating System  (Kernel Version 3.16)
+
+NOTE: Make sure that the system has proper internet connectivity.
+
+1. Git clone the Scheduler in /home/<hostname>. Open the folder /home/<hostname>/ConBalancer/Scheduler
+2. Run the file : sh ./install_docker.sh
+3. Check whether Docker is installed properly through command : docker version.
+Make sure that the Experimental Version is set to true and installed docker vers
+ion is 1.13.0.
+4. Run:  sudo sh ./home/<hostname>/ConBalancer/Scheduler/install.sh
+5. Make sure that CRIU is installed. Execute the command: systemctl show. The command shows the CRIU installed under the ENVIRONMENT attribute. If CRIU is properly installed the ENVIRONMENT path will show the CRIU installed path as /home/<HOSTNAME>/criu-3.4/. Try running criu command to see if its properly installed: criu. If criu command executes then the CRIU is installed properly.
+6. If some issues are occured run, systemctl restart docker. Also change the permission of /var/run/docker.sock to all i.e chmod 777 /var/run/docker.sock.
+7. mv /home/<hostname>/ConBalancer/Scheduler /opt
+8. cd /opt
+9. tar -zxvf kafka_updated.tar
+10. Establish SSH to all machines. Set the user names and user IP address of all machines in files user_IPS and user_name.
+11. Execute ./ssh-all.sh
+12. Add the machines and ip address in /etc/hosts file. Also add the registry IP address to the file.
+12. Now run a docker container.Example : docker run -d --name tomcatdemo tomcat:alpine
+13. If the registry is running, migrate the container: ./migrate_v2.sh <tomcatdemo> targetnode@ipaddress registrynode:443/
+
+
+
+
+ To start a registry: 
+
+
+
+
+To start optimizer:
+
