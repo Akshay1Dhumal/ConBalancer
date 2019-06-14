@@ -11,7 +11,7 @@ IFS=$'\n' read -d '' -r -a user_ips < user_ips
 #user_ips=(10.21.235.181 10.21.233.193 10.21.234.54 10.21.239.216 10.21.239.161)
 at_rate="@"
 topic_m="M"
-
+ssh-keygen -t rsa
 
 filename=$1
 period=6 #Default period : ie 1 sec
