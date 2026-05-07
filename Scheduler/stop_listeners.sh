@@ -1,13 +1,38 @@
 #!/bin/bash
-#Machine username and IP set here
+#
+# STOP CONTAINER MIGRATION LISTENERS
+#
+# Description:
+#   Stops all ClientListener instances on all worker nodes.
+#   This terminates the migration command listeners and prevents further migrations.
+#
+# Processing:
+#   1. Reads machine configuration from user_name and user_ips files
+#   2. SSH connects to each worker node
+#   3. Kills ClientListener processes on each node
+#   4. Stops listening for migration commands
+#
+# Configuration:
+#   - user_name: One username per line for each worker node
+#   - user_ips: One IP address per line for each worker node
+#
+# Usage:
+#   ./stop_listeners.sh
+#
+# Prerequisites:
+#   - SSH key-based authentication to all nodes
+#   - Listeners must be running (started by start_listeners.sh)
+#
+# See Also:
+#   - ./start_listeners.sh: Start listening for migration commands  
+#   - ./stop_producers.sh: Stop statistics producers
+#
+# Machine username and IP set here
 #user_name=(sparknode17 sparknode17)
 #user_ips=(10.21.235.181 10.21.233.193)
 
 IFS=$'\n' read -d '' -r -a user_name < user_name
 IFS=$'\n' read -d '' -r -a user_ips < user_ips
-
-#user_name=(sparknode17 sparknode17 sparknode19 sparknode18 sparknode18)
-#user_ips=(10.21.235.181 10.21.233.193 10.21.234.54 10.21.239.216 10.21.239.161)
 
 at_rate="@"
 topic_m="M"

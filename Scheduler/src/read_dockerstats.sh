@@ -1,5 +1,37 @@
 #!/bin/bash
-period=2 #Default period : ie 1 sec
+#
+# COLLECT LOCAL CONTAINER STATISTICS
+#
+# Description:
+#   Periodically collects Docker container statistics from the local node.
+#   Extracts resource utilization metrics and publishes to Kafka for the scheduler.
+#
+# Metrics Collected: CPU%, Memory%, Network I/O, Block I/O, NUMA distribution
+#
+# Usage: ./read_dockerstats.sh [period_seconds]
+#        Default: 2 seconds
+#
+# Processing:
+#   1. Gather system memory, CPU, and socket information
+#   2. Execute docker stats in periodic intervals
+#   3. Collect per-container cgroup memory data
+#   4. Normalize metrics to standard units
+#   5. Publish to Kafka topic via MultiBrokerProducer
+#   6. Repeat indefinitely at specified period
+#
+# System Info Gathered:
+#   - MemTotal: Total system memory
+#   - MemAvail: Available system memory
+#   - CPU cores: Total processors on system
+#   - Sockets: Number of CPU sockets for NUMA awareness
+#   - NUMA: Per-socket memory distribution
+#
+# Typical Invocation:
+#   ssh user@worker_node "./read_dockerstats.sh 6"
+#   Called from start_producers.sh on each node
+#
+
+period=2 #Default period : ie 2 seconds
 period=$1
 echo "Period of stats reporting : $period" 
 count=0

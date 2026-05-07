@@ -19,135 +19,248 @@ import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-class container_stats {
-	Stats s; // Structure containing the statistics
-	String container_id;
-
-	public Stats getS() {
-		return s;
-	}
-
-	public void setS(Stats s) {
-		this.s = s;
-	}
-
-	public String getContainer_id() {
-		return container_id;
-	}
-
-	public void setContainer_id(String container_id) {
-		this.container_id = container_id;
-	}
-
-	public container_stats(Stats s, String container_id) {
-		super();
-		this.s = s;
-		this.container_id = container_id;
-	}
-}
-
-class ContainerInfo {
-	String container_id;
-	Stats container_stats;
-	int machine_id; // here machine id refers to Machine topic
-
-	public ContainerInfo() {
-
-	}
-
-	public ContainerInfo(String container_id, Stats container_stats, int machine_id) {
-		super();
-		this.container_id = container_id;
-		this.container_stats = container_stats;
-		this.machine_id = machine_id;
-	}
-
-	public String getContainer_id() {
-		return container_id;
-	}
-
-	public void setContainer_id(String container_id) {
-		this.container_id = container_id;
-	}
-
-	public Stats getContainer_stats() {
-		return container_stats;
-	}
-
-	public void setContainer_stats(Stats container_stats) {
-		this.container_stats = container_stats;
-	}
-
-	public int getMachine_id() {
-		return machine_id;
-	}
-
-	public void setMachine_id(int topic) {
-		this.machine_id = topic;
-	}
-
-}
-
-public class ConsumerLoop implements Runnable {
-	private final KafkaConsumer<String, String> consumer;
-	private final List<String> topics;
-	ArrayList<Integer> machine_list = new ArrayList<>();
-	long startTime, stopTime, elapsedTime;
-	ContainerInfo con_info;
-	double total_cpu_usage, total_mem_usage, total_neti, total_neto, total_blocki, total_blocko;;
-	HashMap<Integer, ArrayList<ContainerInfo>> hm = new HashMap<>(); // each machine_topic as key with its container
-	ArrayList<ContainerInfo> c_info = new ArrayList<>();
-	DecimalFormat numberFormat = new DecimalFormat("#.00");
-	Logger logger = Logger.getLogger("MyLog");
-	FileHandler fh;
-	static int ga_calls = 0;
-
-	int wait_period = 5000; // Configurable
+/**
+ * Container statistics wrapper that associates raw container statistics
+ * with its container identifier. Used for tracking container metrics internally.
+ */
+class ContainerStatsWrapper {
+	/** Resource statistics (CPU, memory, I/O) for the container */
+	Stats containerResourceStats;
+	
+	/** Docker container ID or name */
+	String containerId;
 
 	/**
-	 * Adds the container information to the list.
-	 * 
-	 * If the container and its data are already there, remove the existing data and
-	 * update the new one.
-	 * 
-	 * @param a
-	 *            Container stats in specified format separated by :
-	 * @param topic
-	 *            The machine id form where the container resides
+	 * Get the container resource statistics.
+	 * @return Resource statistics object with CPU, memory, I/O metrics
 	 */
-	public void add_info(String[] a, int topic) {
+	public Stats getS() {
+		return containerResourceStats;
+	}
+
+	/**
+	 * Set the container resource statistics.
+	 * @param stats Resource statistics object to associate
+	 */
+	public void setS(Stats stats) {
+		this.containerResourceStats = stats;
+	}
+
+	/**
+	 * Get the container identifier.
+	 * @return Container ID or name
+	 */
+	public String getContainer_id() {
+		return containerId;
+	}
+
+	/**
+	 * Set the container identifier.
+	 * @param containerId Container ID or name to set
+	 */
+	public void setContainer_id(String containerId) {
+		this.containerId = containerId;
+	}
+
+	/**
+	 * Constructor for ContainerStatsWrapper.
+	 * @param stats Resource statistics
+	 * @param containerId Container identifier
+	 */
+	public ContainerStatsWrapper(Stats stats, String containerId) {
+		super();
+		this.containerResourceStats = stats;
+		this.containerId = containerId;
+	}
+}
+
+/**
+ * ContainerInfo represents complete information about a container
+ * including its identifier, resource statistics, and current host machine.
+ * This is the primary data structure used by the scheduler.
+ */
+class ContainerInfo {
+	/** Unique Docker container identifier */
+	String containerId;
+	
+	/** Resource statistics for this container */
+	Stats containerStats;
+	
+	/** Kafka topic ID / machine ID where container currently resides */
+	int hostMachineId;
+
+	/**
+	 * Default constructor for ContainerInfo.
+	 */
+	public ContainerInfo() {
+	}
+
+	/**
+	 * Full constructor for ContainerInfo.
+	 * @param containerId Container identifier
+	 * @param containerStats Resource statistics
+	 * @param hostMachineId Machine/machine ID where container is running
+	 */
+	public ContainerInfo(String containerId, Stats containerStats, int hostMachineId) {
+		super();
+		this.containerId = containerId;
+		this.containerStats = containerStats;
+		this.hostMachineId = hostMachineId;
+	}
+
+	/**
+	 * Get container identifier.
+	 * @return Container ID
+	 */
+	public String getContainer_id() {
+		return containerId;
+	}
+
+	/**
+	 * Set container identifier.
+	 * @param containerId Container ID
+	 */
+	public void setContainer_id(String containerId) {
+		this.containerId = containerId;
+	}
+
+	/**
+	 * Get container resource statistics.
+	 * @return Statistics object with CPU, memory, I/O metrics
+	 */
+	public Stats getContainer_stats() {
+		return containerStats;
+	}
+
+	/**
+	 * Set container resource statistics.
+	 * @param containerStats Statistics object
+	 */
+	public void setContainer_stats(Stats containerStats) {
+		this.containerStats = containerStats;
+	}
+
+	/**
+	 * Get the machine ID where container currently resides.
+	 * @return Machine ID / Kafka topic ID
+	 */
+	public int getMachine_id() {
+		return hostMachineId;
+	}
+
+	/**
+	 * Set the machine ID where container is running.
+	 * @param hostMachineId Machine/topic ID
+	 */
+	public void setMachine_id(int hostMachineId) {
+		this.hostMachineId = hostMachineId;
+	}
+}
+
+/**
+ * ConsumerLoop is the main orchestration component that:
+ * 1. Receives container statistics from Kafka topics (one per machine)
+ * 2. Aggregates and normalizes metrics across all containers
+ * 3. Invokes the Genetic Algorithm to compute optimal placements
+ * 4. Triggers container migrations via ClientListener
+ * 5. Logs all decisions and outcomes for monitoring
+ * 
+ * Implements Runnable to execute as a concurrent task.
+ */
+public class ConsumerLoop implements Runnable {
+	/** Kafka consumer for receiving statistics from producer topics */
+	private final KafkaConsumer<String, String> consumer;
+	
+	/** List of Kafka topics to consume from (one per machine) */
+	private final List<String> topics;
+	
+	/** List of machine IDs in the cluster */
+	ArrayList<Integer> machineIdList = new ArrayList<>();
+	
+	/** Timing metrics for performance monitoring */
+	long startTime, stopTime, elapsedTime;
+	
+	/** Current container information being processed */
+	ContainerInfo currentContainerInfo;
+	
+	/** Aggregated resource usage across all containers */
+	double totalCpuUsage, totalMemUsage, totalNetworkIn, totalNetworkOut, totalBlockIn, totalBlockOut;
+	
+	/** 
+	 * Primary data structure: Map of machine ID -> List of containers on that machine.
+	 * Used to track which containers are on which machines.
+	 */
+	HashMap<Integer, ArrayList<ContainerInfo>> machineContainersMap = new HashMap<>();
+	
+	/** List of all containers in the cluster with their information */
+	ArrayList<ContainerInfo> allContainersInfo = new ArrayList<>();
+	
+	/** Number formatter for console logging */
+	DecimalFormat numberFormat = new DecimalFormat("#.00");
+	
+	/** Logger for file-based operation tracking */
+	Logger logger = Logger.getLogger("MyLog");
+	
+	/** File handler for logger output */
+	FileHandler logFileHandler;
+	
+	/** Counter tracking GA invocations for debugging */
+	static int geneticAlgorithmInvocations = 0;
+
+	/** Wait period between optimization cycles (milliseconds) */
+	int optimizationCyclePeriod = 5000; // Configurable
+
+	/**
+	 * Add or update container information in the internal tracking structure.
+	 * 
+	 * This method processes inbound container statistics from Kafka and maintains
+	 * the current snapshot of container-to-machine mappings. If a container already
+	 * exists on a machine, its statistics are updated. Otherwise, it's added as a
+	 * new container on that machine.
+	 * 
+	 * @param statsArray Container statistics array in format: [timestamp, containerID, cpu%, mem%, ...]
+	 * @param kafkaTopicId Machine ID (derived from Kafka topic) where container resides
+	 */
+	public void add_info(String[] statsArray, int kafkaTopicId) {
 		try {
-			Stats st = new Stats();
-			st.convertStats(a);
-			System.out.println("STATS " + st.cpu_perc + "  ........  " + st.mem_perc);
-			con_info = new ContainerInfo();
-			con_info.setContainer_id(a[1]);
-			con_info.setContainer_stats(st);
-			con_info.setMachine_id(topic);
-			if (hm.containsKey(topic)) // hashmap has registered that machine, then
-			{
-				ArrayList<ContainerInfo> aci = hm.get(topic);
-				boolean flag = true;
-				// loop to see if container exists in that machine. If it exists, then remove
-				// and add again
-				for (int i = 0; i < aci.size(); i++) {
-					System.out.println("already in " + aci.get(i).container_id);
-					if (aci.get(i).container_id.trim().equals(a[1].trim())) // if container exists in the machine
-					{
-						aci.remove(i);
-						aci.add(con_info);
-						flag = false;
+			// Parse raw statistics string into Stats object
+			Stats containerMetrics = new Stats();
+			containerMetrics.convertStats(statsArray);
+			System.out.println("STATS " + containerMetrics.cpu_perc + "  ........  " + containerMetrics.mem_perc);
+			
+			// Create container information entry
+			ContainerInfo containerEntry = new ContainerInfo();
+			containerEntry.setContainer_id(statsArray[1]);
+			containerEntry.setContainer_stats(containerMetrics);
+			containerEntry.setMachine_id(kafkaTopicId);
+			
+			// Check if machine is already tracked in hashmap
+			if (machineContainersMap.containsKey(kafkaTopicId)) {
+				// Machine exists, check if container already on this machine
+				ArrayList<ContainerInfo> machineContainers = machineContainersMap.get(kafkaTopicId);
+				boolean containerFound = false;
+				
+				// Search for existing container entry
+				for (int i = 0; i < machineContainers.size(); i++) {
+					System.out.println("already in " + machineContainers.get(i).containerId);
+					if (machineContainers.get(i).containerId.trim().equals(statsArray[1].trim())) {
+						// Container exists, update its statistics
+						machineContainers.remove(i);
+						machineContainers.add(containerEntry);
+						containerFound = true;
 						break;
 					}
 				}
-				if (flag) { // if that container is not listed in that machine:
-					aci.add(con_info);
+				
+				// If container not found on this machine, add it as new entry
+				if (!containerFound) {
+					machineContainers.add(containerEntry);
 				}
-			} else // new topic: ie machine add to hashmap
-			{
-				ArrayList<ContainerInfo> al = new ArrayList<>();
-				al.add(con_info);
-				hm.put(topic, al);
+			} else {
+				// New machine, create entry and add container
+				ArrayList<ContainerInfo> newMachineContainers = new ArrayList<>();
+				newMachineContainers.add(containerEntry);
+				machineContainersMap.put(kafkaTopicId, newMachineContainers);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

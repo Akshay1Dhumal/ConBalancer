@@ -1,10 +1,42 @@
 #!/bin/bash
+#
+# START MIGRATION LISTENERS ON ALL WORKER NODES
+#
+# Description:
+#   Deploys and starts ClientListener instances on all worker nodes in the cluster.
+#   These listeners wait for migration commands from the central scheduler.
+#   Each listener subscribes to its machine's dedicated Kafka topic.
+#
+# Configuration:
+#   Reads from files:
+#   - user_name: One username per line for each worker node
+#   - user_ips: One IP address per line for each worker node (must match user_name)
+#
+# Processing:
+#   1. Loads machine usernames and IP addresses from configuration files
+#   2. For each worker node:
+#      - SSH connects to the node
+#      - Starts ClientListener process
+#      - Listener subscribes to machine-specific Kafka topic
+#   3. All listeners run in the background on their respective nodes
+#
+# Usage:
+#   ./start_listeners.sh
+#
+# Prerequisites:
+#   - user_name and user_ips files must be configured
+#   - SSH key-based authentication must be set up for all nodes
+#   - Java must be installed on all worker nodes
+#   - Kafka and C-Balancer must be installed on all nodes
+#
+# See Also:
+#   - ./stop_listeners.sh: Stop all listeners
+#   - ./start_producers.sh: Start statistics producers
+#
+
 IFS=$'\n' read -d '' -r -a user_name < user_name
 IFS=$'\n' read -d '' -r -a user_ips < user_ips
 
-
-#user_name=(sparknode17 sparknode17 sparknode19 sparknode18 sparknode18)
-#user_ips=(10.21.235.181 10.21.233.193 10.21.234.54 10.21.239.216 10.21.239.161)
 at_rate="@"
 topic_m="L"
 

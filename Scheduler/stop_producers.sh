@@ -1,13 +1,50 @@
 #!/bin/bash
-#Machine username and IP set here
+#
+# STOP CONTAINER STATISTICS PRODUCERS
+#
+# Description:
+#   Stops all statistics producer processes on all worker nodes.
+#   This halts the collection and publication of container metrics to Kafka.
+#
+# Action Taken:
+#   1. Reads machine configuration (usernames and IPs)
+#   2. SSH connects to each worker node
+#   3. Finds and terminates read_dockerstats.sh processes
+#   4. Stops Kafka statistics publishing
+#
+# Configuration:
+#   - user_name: Worker node usernames
+#   - user_ips: Worker node IP addresses
+#
+# Metrics Stopped:
+#   - CPU percentage and usage
+#   - Memory percentage and usage
+#   - Network I/O metrics
+#   - Block I/O metrics
+#
+# Usage:
+#   ./stop_producers.sh
+#
+# Prerequisites:
+#   - SSH access to all nodes
+#   - Producers must be running (started by start_producers.sh)
+#
+# When to Use:
+#   - Before system shutdown
+#   - Before reconfiguring collection parameters
+#   - For debugging or testing
+#
+# See Also:
+#   - ./start_producers.sh: Start statistics collection
+#   - ./read_dockerstats.sh: Local stats collection script
+#   - ./stop_listeners.sh: Stop migration listeners
+#
+# Machine username and IP set here
 #user_name=(sparknode17 sparknode17)
 #user_ips=(10.21.235.181 10.21.233.193)
 
 IFS=$'\n' read -d '' -r -a user_name < user_name
 IFS=$'\n' read -d '' -r -a user_ips < user_ips
-
-#user_name=(sparknode17 sparknode17 sparknode19 sparknode18 sparknode18)
-#user_ips=(10.21.235.181 10.21.233.193 10.21.234.54 10.21.239.216 10.21.239.161)
 
 at_rate="@"
 topic_m="M"

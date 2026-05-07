@@ -7,62 +7,116 @@ import javax.management.loading.MLet;
 
 import scala.util.Random;
 
+/**
+ * GeneticAlgorithm class implements an evolutionary computation algorithm
+ * for optimal container-to-node placement in a distributed cluster environment.
+ * 
+ * The algorithm works by:
+ * 1. Maintaining a population of candidate placement solutions
+ * 2. Evaluating fitness based on variance and migration costs
+ * 3. Selecting, crossing over, and mutating solutions
+ * 4. Converging toward optimal placement after multiple generations
+ * 
+ * Optimization considers two objectives:
+ * - Minimize variance in resource utilization across nodes
+ * - Minimize number of container migrations required
+ */
 public class GeneticAlgorithm {
-	class metric {
-		double variance;
-		double migration;
+	/**
+	 * OptimizationMetric represents combined fitness metrics for a placement solution.
+	 * Encapsulates variance (resource utilization balance) and migration count.
+	 */
+	class OptimizationMetric {
+		/** Variance in resource utilization across cluster nodes (lower is better) */
+		double resourceUtilizationVariance;
+		
+		/** Number of container migrations required to achieve this placement (lower is better) */
+		double migrationCost;
 
+		/**
+		 * Get the resource utilization variance metric.
+		 * @return variance value (lower indicates more balanced resource distribution)
+		 */
 		public double getVariance() {
-			return variance;
+			return resourceUtilizationVariance;
 		}
 
-		public metric(double variance, double migration) {
+		/**
+		 * Full constructor for OptimizationMetric creation.
+		 * @param variance Resource utilization variance across nodes
+		 * @param migration Number of migrations required
+		 */
+		public OptimizationMetric(double variance, double migration) {
 			super();
-			this.variance = variance;
-			this.migration = migration;
+			this.resourceUtilizationVariance = variance;
+			this.migrationCost = migration;
 		}
 
-		public metric() {
-
+		/**
+		 * Default constructor for OptimizationMetric.
+		 */
+		public OptimizationMetric() {
 		}
 
+		/**
+		 * Set the resource utilization variance.
+		 * @param variance New variance value
+		 */
 		public void setVariance(double variance) {
-			this.variance = variance;
+			this.resourceUtilizationVariance = variance;
 		}
 
+		/**
+		 * Get the migration cost metric.
+		 * @return number of container migrations required
+		 */
 		public double getMigration() {
-			return migration;
+			return migrationCost;
 		}
 
+		/**
+		 * Set the migration cost.
+		 * @param migration Number of migrations required
+		 */
 		public void setMigration(int migration) {
-			this.migration = migration;
+			this.migrationCost = migration;
 		}
 	}
 
+	/** Number of individuals in each generation */
 	private int populationSize;
 
 	/**
-	 * Mutation rate is the fractional probability than an individual gene will
+	 * Mutation rate is the fractional probability that an individual gene will
 	 * mutate randomly in a given generation. The range is 0.0-1.0, but is generally
-	 * small (on the order of 0.1 or less).
+	 * small (on the order of 0.1 or less). Mutation introduces diversity to prevent
+	 * premature convergence.
 	 */
 	private double mutationRate;
 
 	/**
 	 * Crossover rate is the fractional probability that two individuals will "mate"
 	 * with each other, sharing genetic information, and creating offspring with
-	 * traits of each of the parents. Like mutation rate the rance is 0.0-1.0 but
-	 * small.
+	 * traits of each of the parents. Range is 0.0-1.0 but typically small.
+	 * High crossover promotes exploitation of good solutions.
 	 */
 	private double crossoverRate;
 
 	/**
 	 * Elitism is the concept that the strongest members of the population should be
-	 * preserved from generation to generation. If an individual is one of the
-	 * elite, it will not be mutated or crossover.
+	 * preserved from generation to generation. Elite individuals are not mutated or
+	 * crossed over, ensuring good solutions persist.
+	 * Count specifies the exact number of elite individuals to preserve.
 	 */
 	private int elitismCount;
 
+	/**
+	 * Constructor to initialize the Genetic Algorithm with parameters.
+	 * @param populationSize Number of solutions in each generation
+	 * @param mutationRate Probability of random gene changes (0.0-1.0)
+	 * @param crossoverRate Probability of solution breeding (0.0-1.0)
+	 * @param elitismCount Number of best solutions to preserve each generation
+	 */
 	public GeneticAlgorithm(int populationSize, double mutationRate, double crossoverRate, int elitismCount) {
 		this.populationSize = populationSize;
 		this.mutationRate = mutationRate;
@@ -71,44 +125,53 @@ public class GeneticAlgorithm {
 	}
 
 	/**
-	 * Initialize population
+	 * Initialize a new population of random container placement solutions.
+	 * This creates the first generation with random but valid placements.
 	 * 
-	 * @param chromosomeLength
-	 *            The length of the individuals chromosome
-	 * @return population The initial population generated
+	 * @param chromosomeLength Number of containers in the cluster
+	 * @param machineIds Array of valid machine/node identifiers
+	 * @return population Newly generated population of placement solutions
 	 */
-	public Population initPopulation(int chromosomeLength, int[] machine_ids) {
-		// Initialize population
-		Population population = new Population(this.populationSize, chromosomeLength, machine_ids);
+	public Population initPopulation(int chromosomeLength, int[] machineIds) {
+		// Initialize population with random container-to-node assignments
+		Population population = new Population(this.populationSize, chromosomeLength, machineIds);
 		return population;
 	}
 
-	public double getMean(double parameter[]) {
-		double mean = 0;
-		for (double p : parameter) {
-			mean += p;
+	/**
+	 * Calculate the arithmetic mean (average) of a numeric array.
+	 * Used for computing average resource utilization per machine.
+	 * 
+	 * @param resourceValues Array of resource metric values
+	 * @return mean The arithmetic average of all values
+	 */
+	public double getMean(double[] resourceValues) {
+		double sum = 0;
+		for (double value : resourceValues) {
+			sum += value;
 		}
-		return mean / (double) parameter.length;
+		return sum / (double) resourceValues.length;
 	}
 
-	public int numberMigrations(Individual individual, int[] init_placement) {
-		int total_migrations = 0;
-		// System.out.println();
-		// System.out.print("Init placements ");
-		/*
-		 * for (int i = 0; i < init_placement.length; i++) {
-		 * System.out.print(init_placement[i]); }
-		 */
-		// System.out.print(" new "+individual.toString());
-		// System.out.println();
-
-		for (int geneIndex = 0; geneIndex < individual.getChromosomeLength(); geneIndex++) {
-			if (individual.getGene(geneIndex) != (init_placement[geneIndex])) {
-				total_migrations++;
+	/**
+	 * Calculate the number of container migrations required to achieve
+	 * this placement solution from the initial (current) placement.
+	 * 
+	 * @param solution Individual solution representing target placement
+	 * @param initialPlacement Current placement of containers before optimization
+	 * @return migrationCount Number of containers that need to move
+	 */
+	public int calculateMigrationCount(Individual solution, int[] initialPlacement) {
+		int totalMigrations = 0;
+		
+		// Compare each container's current position with its target position
+		for (int containerIndex = 0; containerIndex < solution.getChromosomeLength(); containerIndex++) {
+			if (solution.getGene(containerIndex) != (initialPlacement[containerIndex])) {
+				totalMigrations++;
 			}
 		}
-		// System.out.print(" migrations "+total_migrations);
-		return total_migrations;
+		
+		return totalMigrations;
 	}
 
 	/**

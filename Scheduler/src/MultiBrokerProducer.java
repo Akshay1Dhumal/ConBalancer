@@ -1,47 +1,55 @@
-
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
-
-import java.util.Properties;
-import java.util.Random;
-
-
+/**
+ * MultiBrokerProducer publishes container statistics to Kafka brokers.
+ * 
+ * This producer:
+ * 1. Connects to multiple Kafka brokers for high availability
+ * 2. Uses custom partitioner to distribute messages across brokers
+ * 3. Sends container statistics from worker nodes to the scheduler
+ * 4. Implements request acknowledgment for reliability
+ * 
+ * Usage: Call produce(topic, message) to send statistics to a Kafka topic.
+ */
 public class MultiBrokerProducer {
-	private static Producer<Integer, String> producer;
-	private final Properties properties = new Properties();
+	/** Kafka producer for sending statistics messages */
+	private static Producer<Integer, String> kafkaProducer;
+	
+	/** Configuration properties for Kafka producer */
+	private final Properties producerProperties = new Properties();
 
+	/**
+	 * Constructor initializes Kafka producer with broker configuration.
+	 * Sets up partitioner, serializers, and acknowledgment settings.
+	 */
 	public MultiBrokerProducer() {
-		properties.put("metadata.broker.list", "10.21.235.181:9092,10.21.233.193:9092");
-		properties.put("serializer.class", "kafka.serializer.StringEncoder");
-		properties.put("partitioner.class", "SimplePartitioner");
-		properties.put("request.required.acks", "1");
-		ProducerConfig config = new ProducerConfig(properties);
-		producer = new Producer<>(config);
+		// Configure list of Kafka brokers
+		producerProperties.put("metadata.broker.list", "10.21.235.181:9092,10.21.233.193:9092");
+		
+		// Set message serializer
+		producerProperties.put("serializer.class", "kafka.serializer.StringEncoder");
+		
+		// Use custom partitioner for distribution
+		producerProperties.put("partitioner.class", "SimplePartitioner");
+		
+		// Request acknowledgment from broker before returning
+		producerProperties.put("request.required.acks", "1");
+		
+		ProducerConfig producerConfig = new ProducerConfig(producerProperties);
+		kafkaProducer = new Producer<>(producerConfig);
 	}
 
-	public static void produce(String topic, String msg) {
+	/**
+	 * Send statistics message to a Kafka topic.
+	 * 
+	 * @param kafkaTopic Topic name (derived from machine ID)
+	 * @param statisticsMessage Container statistics formatted as "containerID,stats..."
+	 */
+	public static void produce(String kafkaTopic, String statisticsMessage) {
 		new MultiBrokerProducer();
 		Random random = new Random();
-		System.out.println("Listener msg "+ topic+" " +msg);
-		//producer.send(new KeyedMessage<Integer, String>(topic, msg));
-       /* for (long i = 0; i < 10; i++) {
-            Integer key = random.nextInt(255);
-            msg = "This message is for key - " + key;
-           // producer.send(new KeyedMessage<Integer, String>(topic.trim(), msg.trim()));
-        }*/
-		producer.send(new KeyedMessage<Integer, String>(topic, msg));
-		producer.close();
+		System.out.println("Publishing statistics - Topic: " + kafkaTopic + " Message: " + statisticsMessage);
+		
+		// Send message with round-robin partitioning
+		kafkaProducer.send(new KeyedMessage<Integer, String>(kafkaTopic, statisticsMessage));
+		kafkaProducer.close();
 	}
-	/*public static void main(String ar[])
-	{
-		new MultiBrokerProducer();
-		for (long i = 0; i < 10; i++) {
-			Random random = new Random();
-            Integer key = random.nextInt(255);
-           String  msg = "This message is for key - " + key;
-            producer.send(new KeyedMessage<Integer, String>("l1", msg.trim()));
-         //   producer.close();
-	}
-}*/
 }

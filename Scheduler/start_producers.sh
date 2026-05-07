@@ -1,25 +1,63 @@
 #!/bin/bash
-#Machine username and IP set here
+#
+# START CONTAINER STATISTICS PRODUCERS ON ALL WORKER NODES
+#
+# Description:
+#   Deploys and starts MultiBrokerProducer instances on all worker nodes.
+#   These producers continuously collect container statistics (CPU, memory, I/O)
+#   and publish them to Kafka topics for consumption by the central scheduler.
+#
+# Configuration:
+#   Reads from files:
+#   - user_name: One username per line for each worker node
+#   - user_ips: One IP address per line for each worker node
+#
+# Statistics Collected (per collection cycle):
+#   - CPU percentage and usage
+#   - Memory percentage, usage, and limits
+#   - Network I/O (inbound/outbound)
+#   - Block I/O (inbound/outbound)
+#   - NUMA memory distribution
+#
+# Processing:
+#   1. Loads machine usernames and IP addresses from configuration files
+#   2. Configures collection period (default: 6 seconds)
+#   3. For each worker node:
+#      - SSH connects and executes read_dockerstats.sh
+#      - Collects local container statistics
+#      - Publishes to Kafka via MultiBrokerProducer
+#      - Runs in background on each node
+#
+# Usage:
+#   ./start_producers.sh [period]
+#   Examples:
+#     ./start_producers.sh        # Uses default period (6 seconds)
+#     ./start_producers.sh 10     # Collect every 10 seconds
+#
+# Prerequisites:
+#   - user_name and user_ips must be configured
+#   - SSH key-based authentication configured
+#   - Docker must be installed on all worker nodes
+#   - Kafka brokers must be running
+#
+# Output:
+#   - Statistics continuously published to Kafka
+#   - Logs stored at /opt/kafka_2.11-0.9.0.0/topics_HHMI.txt
+#
+# See Also:
+#   - ./stop_producers.sh: Stop statistics collection
+#   - ./read_dockerstats.sh: Local statistics collection script
+#   - ./start_listeners.sh: Start migration listeners
+#
 
 IFS=$'\n' read -d '' -r -a user_name < user_name
 IFS=$'\n' read -d '' -r -a user_ips < user_ips
-
-
-
-
-#user_name=(sparknode17 sparknode17 sparknode19 sparknode18 sparknode18)
-#user_ips=(10.21.235.181 10.21.233.193 10.21.234.54 10.21.239.216 10.21.239.161)
 at_rate="@"
 topic_m="M"
 
-
 period=$1
-period=6 #Default period : ie 1 sec
-echo "Period is "$period
-#ZOOKEEPER IPS SET HERE
-ips_z=(10.21.235.181 10.21.233.193)
-#KAFKA-BROKERS SET HERE
-ips_b=(10.21.235.181 10.21.233.193)
+period=6 #Default period : ie 6 seconds
+echo "Collection Period (seconds): "$period
 
 
 #Logs
